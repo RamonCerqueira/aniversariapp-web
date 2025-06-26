@@ -1,0 +1,193 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --card: #FFFFFF;
+  --card-foreground: #000000;
+  --popover: #FFFFFF;
+  --popover-foreground: #000000;
+  --primary: #4169E1;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FF1493;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --accent: #FFD700;
+  --accent-foreground: #000000;
+  --destructive: #EF4444;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #4169E1;
+  --chart-1: #4169E1;
+  --chart-2: #FF1493;
+  --chart-3: #FFD700;
+  --chart-4: #32CD32;
+  --chart-5: #FF6347;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #4169E1;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3F4F6;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #4169E1;
+}
+
+.dark {
+  --background: #1F2937;
+  --foreground: #F9FAFB;
+  --card: #374151;
+  --card-foreground: #F9FAFB;
+  --popover: #374151;
+  --popover-foreground: #F9FAFB;
+  --primary: #60A5FA;
+  --primary-foreground: #1F2937;
+  --secondary: #F472B6;
+  --secondary-foreground: #1F2937;
+  --muted: #4B5563;
+  --muted-foreground: #9CA3AF;
+  --accent: #FDE047;
+  --accent-foreground: #1F2937;
+  --destructive: #F87171;
+  --border: #4B5563;
+  --input: #4B5563;
+  --ring: #60A5FA;
+  --chart-1: #60A5FA;
+  --chart-2: #F472B6;
+  --chart-3: #FDE047;
+  --chart-4: #4ADE80;
+  --chart-5: #FB7185;
+  --sidebar: #374151;
+  --sidebar-foreground: #F9FAFB;
+  --sidebar-primary: #60A5FA;
+  --sidebar-primary-foreground: #1F2937;
+  --sidebar-accent: #4B5563;
+  --sidebar-accent-foreground: #F9FAFB;
+  --sidebar-border: #4B5563;
+  --sidebar-ring: #60A5FA;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Cores personalizadas do AniversariApp */
+.text-primary-custom {
+  color: #4169E1;
+}
+
+.text-secondary-custom {
+  color: #FF1493;
+}
+
+.text-accent-custom {
+  color: #FFD700;
+}
+
+.bg-primary-custom {
+  background-color: #4169E1;
+}
+
+.bg-secondary-custom {
+  background-color: #FF1493;
+}
+
+.bg-accent-custom {
+  background-color: #FFD700;
+}
+
+.border-primary-custom {
+  border-color: #4169E1;
+}
+
+/* Animações personalizadas */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-pulse-custom {
+  animation: pulse 2s infinite;
+}
