@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
+  Users,
+  Clock,
   Trash2,
   Edit3,
   Mail,
@@ -73,7 +75,7 @@ export default function GuestList({ onBack }) {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Convidados</h1>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold">{totalGuests}</p>
               <p className="text-sm text-muted-foreground">Total</p>
@@ -89,38 +91,73 @@ export default function GuestList({ onBack }) {
           </div>
         </div>
 
-        <div className="mt-4 md:mt-0 flex space-x-2">
-          <Button variant="outline" onClick={onBack}>Voltar</Button>
+        <div className="mt-4 md:mt-0 flex flex-wrap gap-2 justify-start md:justify-end">
+          {/* Voltar */}
+          <Button variant="outline" onClick={onBack}>
+            <span className="sm:inline hidden">Voltar</span>
+            <svg className="sm:hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+          </Button>
+
+          {/* Adicionar */}
           <Button onClick={() => setIsAdding(true)}>
-            <Plus size={16} className="mr-1" />
-            Adicionar
+            <Plus size={16} className="sm:inline hidden" />
+            <span className="sm:ml-1 sm:inline hidden">Adicionar</span>
+            <Plus size={16} className="sm:hidden" />
           </Button>
+
+          {/* Convidar Todos */}
           <Button onClick={() => { setSelectedIds([]); setIsBulkInviteOpen(true); }}>
-            <Mail size={16} className="mr-1" />
-            Convidar Todos
+            <Mail size={16} className="sm:inline hidden" />
+            <span className="sm:ml-1 sm:inline hidden">Convidar Todos</span>
+            <Mail size={16} className="sm:hidden" />
           </Button>
+
+          {/* Convidar Selecionados */}
           <Button
             disabled={selectedIds.length === 0}
             onClick={() => setIsBulkInviteOpen(true)}
           >
-            <Mail size={16} className="mr-1" />
-            Convidar Selecionados ({selectedIds.length})
+            <Mail size={16} className="sm:inline hidden" />
+            <span className="sm:ml-1 sm:inline hidden">
+              Convidar Selecionados ({selectedIds.length})
+            </span>
+            <Mail size={16} className="sm:hidden" />
           </Button>
         </div>
+
       </div>
 
       <Separator />
 
+
       {/* Filtros */}
       <Tabs value={filter} onValueChange={setFilter} className="mb-4">
-        <TabsList>
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="pending">Pendentes</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmados</TabsTrigger>
-          <TabsTrigger value="declined">Recusados</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-2">
+          {/* Todos */}
+          <TabsTrigger value="all" className="flex items-center gap-1">
+            <Users size={16} />
+            <span className="hidden sm:inline">Todos</span>
+          </TabsTrigger>
+
+          {/* Pendentes */}
+          <TabsTrigger value="pending" className="flex items-center gap-1">
+            <Clock size={16} />
+            <span className="hidden sm:inline">Pendentes</span>
+          </TabsTrigger>
+
+          {/* Confirmados */}
+          <TabsTrigger value="confirmed" className="flex items-center gap-1">
+            <CheckCircle2 size={16} className="text-green-600" />
+            <span className="hidden sm:inline">Confirmados</span>
+          </TabsTrigger>
+
+          {/* Recusados */}
+          <TabsTrigger value="declined" className="flex items-center gap-1">
+            <XCircle size={16} className="text-red-600" />
+            <span className="hidden sm:inline">Recusados</span>
+          </TabsTrigger>
         </TabsList>
       </Tabs>
-
       {/* Lista de convidados */}
       {filteredGuests.length === 0 ? (
         <p className="text-center text-muted-foreground">Nenhum convidado para exibir.</p>
@@ -129,40 +166,46 @@ export default function GuestList({ onBack }) {
           {filteredGuests.map(guest => (
             <li
               key={guest.id}
-              className="bg-card p-4 rounded-lg shadow-sm flex items-center justify-between"
+              className="bg-card p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
             >
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(guest.id)}
-                  onChange={() => toggleSelect(guest.id)}
-                />
-                <div>
-                  <p className="font-semibold">{guest.name}</p>
-                  <p className="text-sm text-muted-foreground">{guest.phone}</p>
-                  <p className="text-sm">
-                    Acompanhantes: <strong>{guest.accompany}</strong>
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    {guest.status === 'confirmed' && (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircle2 size={16} /> Confirmado
-                      </span>
-                    )}
-                    {guest.status === 'declined' && (
-                      <span className="flex items-center text-red-600">
-                        <XCircle size={16} /> Recusado
-                      </span>
-                    )}
-                    {guest.status === 'pending' && (
-                      <span className="text-muted-foreground">Pendente</span>
-                    )}
+              {/* Conteúdo do convidado */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 w-full">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(guest.id)}
+                    onChange={() => toggleSelect(guest.id)}
+                    className="mt-1"
+                  />
+                  <div>
+                    <p className="font-semibold">{guest.name}</p>
+                    <p className="text-sm text-muted-foreground">{guest.phone}</p>
+                    <p className="text-sm">
+                      Acompanhantes: <strong>{guest.accompany}</strong>
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {guest.status === 'confirmed' && (
+                        <span className="flex items-center text-green-600 text-sm">
+                          <CheckCircle2 size={16} className="mr-1" />
+                          Confirmado
+                        </span>
+                      )}
+                      {guest.status === 'declined' && (
+                        <span className="flex items-center text-red-600 text-sm">
+                          <XCircle size={16} className="mr-1" />
+                          Recusado
+                        </span>
+                      )}
+                      {guest.status === 'pending' && (
+                        <span className="text-sm text-muted-foreground">Pendente</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                {/* Marcar confirmado */}
+              {/* Ações */}
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2 justify-start sm:justify-end">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -174,7 +217,6 @@ export default function GuestList({ onBack }) {
                   />
                 </Button>
 
-                {/* Editar */}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -183,12 +225,8 @@ export default function GuestList({ onBack }) {
                   <Edit3 size={16} />
                 </Button>
 
-                {/* Enviar convite individual */}
                 {invitingGuest === guest ? (
-                  <SendInviteModal
-                    guest={guest}
-                    onClose={() => setInvitingGuest(null)}
-                  />
+                  <SendInviteModal guest={guest} onClose={() => setInvitingGuest(null)} />
                 ) : (
                   <Button
                     size="icon"
@@ -199,7 +237,6 @@ export default function GuestList({ onBack }) {
                   </Button>
                 )}
 
-                {/* Excluir */}
                 <Button
                   size="icon"
                   variant="destructive"
@@ -213,6 +250,7 @@ export default function GuestList({ onBack }) {
                 </Button>
               </div>
             </li>
+
           ))}
         </ul>
       )}
