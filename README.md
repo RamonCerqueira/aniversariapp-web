@@ -125,7 +125,7 @@ vercel --prod
 
 ## 🎯 Funcionalidades Futuras (Roadmap)
 
-- **Módulo de Convidados**: Importar contatos, gerenciar RSVP
+- **Módulo de Convidados**: Importar contatos, gerenciar RSVP, Enviar convites por Whatsapp, Receber confirmação da presença, 
 - **Churrascômetro**: Cálculo automático de consumo
 - **Sistema de Tarefas**: Checklist personalizado
 - **Fornecedores**: Busca e contratação de serviços
