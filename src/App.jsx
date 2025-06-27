@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PartyProvider } from './contexts/PartyContext';
+import { GuestProvider, useGuests } from './components/Guests/GuestContext';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import PartyDetailsScreen from './components/PartyDetailsScreen';
+import GuestList from './components/Guests/GuestList';
 import './App.css';
 
 function AppContent() {
@@ -30,6 +32,26 @@ function AppContent() {
     setSelectedPartyId(null);
   };
 
+  // 1) Nova função para QuickActions
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case 'guests':
+        setCurrentScreen('guests');
+        break;
+      case 'consumption':
+        setCurrentScreen('consumption');
+        break;
+      case 'checklist':
+        setCurrentScreen('checklist');
+        break;
+      case 'suppliers':
+        setCurrentScreen('suppliers');
+        break;
+      default:
+        setCurrentScreen('home');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -45,26 +67,36 @@ function AppContent() {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
-  switch (currentScreen) {
-    case 'party-details':
-      return (
-        <PartyDetailsScreen
-          partyId={selectedPartyId}
-          onBack={handleBackToHome}
-        />
-      );
-    case 'home':
-    default:
-      return (
-        <HomeScreen
-          onCreateParty={handleCreateParty}
-          onViewParty={handleViewParty}
-        />
-      );
-  }
+  // 2) Envolvemos todas as telas do party/app dentro do GuestProvider
+  return (
+    <GuestProvider>
+      {(() => {
+        switch (currentScreen) {
+          case 'guests':
+            return <GuestList onBack={handleBackToHome} />;
+          case 'party-details':
+            return (
+              <PartyDetailsScreen
+                partyId={selectedPartyId}
+                onBack={handleBackToHome}
+              />
+            );
+          case 'home':
+          default:
+            return (
+              <HomeScreen
+                onCreateParty={handleCreateParty}
+                onViewParty={handleViewParty}
+                onQuickAction={handleQuickAction}  // 3) Passa a prop
+              />
+            );
+        }
+      })()}
+    </GuestProvider>
+  );
 }
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <PartyProvider>
@@ -73,5 +105,3 @@ function App() {
     </AuthProvider>
   );
 }
-
-export default App;

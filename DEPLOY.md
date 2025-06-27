@@ -22,7 +22,7 @@
      - **Framework Preset**: Vite
      - **Build Command**: `npm run build`
      - **Output Directory**: `dist`
-     - **Install Command**: `npm install`
+     - **Install Command**: `npm install --legacy-peer-deps`
    - Clique em "Deploy"
 
 ### Método 2: Vercel CLI
@@ -65,10 +65,10 @@ npm run build
 
 ```bash
 # Instale gh-pages
-npm install --save-dev gh-pages
+npm install --save-dev --legacy-peer-deps gh-pages
 
 # Adicione ao package.json:
-"homepage": "https://seu-usuario.github.io/aniversariapp",
+"homepage": "https://aniversariapp.vercel.app/",
 "scripts": {
   "predeploy": "npm run build",
   "deploy": "gh-pages -d dist"
@@ -117,7 +117,7 @@ Atualmente não há variáveis de ambiente necessárias, mas se precisar:
 ```bash
 # .env.local
 VITE_APP_NAME=AniversariApp
-VITE_API_URL=https://api.exemplo.com
+VITE_API_URL=https://aniversariapp.vercel.app
 ```
 
 ### Domínio Personalizado
@@ -132,7 +132,7 @@ No Vercel:
 ```bash
 # Limpe cache e reinstale
 rm -rf node_modules package-lock.json
-npm install
+npm install --legacy-peer-deps
 npm run build
 ```
 
