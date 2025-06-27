@@ -6,6 +6,7 @@ import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import PartyDetailsScreen from './components/PartyDetailsScreen';
 import GuestList from './components/Guests/GuestList';
+import TaskList from './components/Task/TaskList'
 import './App.css';
 
 function AppContent() {
@@ -68,32 +69,38 @@ function AppContent() {
   }
 
   // 2) Envolvemos todas as telas do party/app dentro do GuestProvider
-  return (
-    <GuestProvider>
-      {(() => {
-        switch (currentScreen) {
-          case 'guests':
-            return <GuestList onBack={handleBackToHome} />;
-          case 'party-details':
-            return (
-              <PartyDetailsScreen
-                partyId={selectedPartyId}
-                onBack={handleBackToHome}
-              />
-            );
-          case 'home':
-          default:
-            return (
-              <HomeScreen
-                onCreateParty={handleCreateParty}
-                onViewParty={handleViewParty}
-                onQuickAction={handleQuickAction}  // 3) Passa a prop
-              />
-            );
-        }
-      })()}
-    </GuestProvider>
-  );
+return (
+  <GuestProvider>
+    {(() => {
+      switch (currentScreen) {
+        case 'guests':
+          return <GuestList onBack={handleBackToHome} />;
+
+        case 'party-details':
+          return (
+            <PartyDetailsScreen
+              partyId={selectedPartyId}
+              onBack={handleBackToHome}
+            />
+          );
+
+        case 'checklist': // ✅ <-- Adicione este case aqui
+          return <TaskList onBack={handleBackToHome} />;
+
+        case 'home':
+        default:
+          return (
+            <HomeScreen
+              onCreateParty={handleCreateParty}
+              onViewParty={handleViewParty}
+              onQuickAction={handleQuickAction}
+            />
+          );
+      }
+    })()}
+  </GuestProvider>
+);
+
 }
 
 export default function App() {

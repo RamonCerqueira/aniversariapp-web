@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +32,7 @@ export default function TaskList({ onBack }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.date) return;
+    if (!form.name.trim() || !form.date) return;
 
     const newTask = {
       id: editingTask ? editingTask.id : crypto.randomUUID(),
@@ -60,6 +59,7 @@ export default function TaskList({ onBack }) {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
+  // Progresso: 0 (criado) a 1 (data limite)
   const getProgress = (task) => {
     const start = dayjs(task.createdAt).startOf('day');
     const end = dayjs(task.date).startOf('day');
@@ -70,89 +70,83 @@ export default function TaskList({ onBack }) {
     return Math.min(Math.max(elapsed / totalDays, 0), 1);
   };
 
+  // Cores corrigidas para dias restantes:
   const getColor = (task) => {
     const today = dayjs().startOf('day');
     const deadline = dayjs(task.date).startOf('day');
     const daysLeft = deadline.diff(today, 'day');
 
-    if (task.done) return 'bg-green-500';
-    if (daysLeft < 0) return 'bg-red-500';
-    if (daysLeft === 0) return 'bg-green-500';
-    if (daysLeft === 1) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (task.done) return 'bg-green-500';      // ✅ Concluído
+    if (daysLeft < 0) return 'bg-red-500';    // ❌ Vencido
+    if (daysLeft === 0) return 'bg-yellow-500'; // ⚠️ Prazo hoje
+    if (daysLeft === 1) return 'bg-yellow-400'; // ⚠️ 1 dia restante
+    return 'bg-blue-400';                      // 🔵 2+ dias restantes
   };
 
   return (
-    <div className="px-6 max-w-4xl mx-auto mt-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-foreground">Tarefas</h1>
-        <Button onClick={onBack} variant="secondary">← Voltar</Button>
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Minhas Tarefas</h1>
+        <Button onClick={onBack} variant="secondary" size="sm">← Voltar</Button>
       </div>
 
-      <Button onClick={() => handleOpenForm()} className="mb-4">+ Nova Tarefa</Button>
+      <div className="mb-6">
+        <Button onClick={() => handleOpenForm()} size="md">+ Nova Tarefa</Button>
+      </div>
 
       {tasks.length === 0 && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-muted-foreground text-sm"
-        >
-          Nenhuma tarefa adicionada.
-        </motion.p>
+        <p className="text-center text-gray-500 italic">Nenhuma tarefa adicionada.</p>
       )}
 
-      {tasks.map((task, index) => {
-        const progress = getProgress(task);
-        const progressColor = getColor(task);
+      <div className="space-y-4">
+        {tasks.map((task) => {
+          const progress = getProgress(task);
+          const progressColor = getColor(task);
 
-        return (
-          <motion.div
-            key={task.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-card rounded-xl shadow p-4 mb-4"
-          >
-            <div className="flex justify-between">
-              <h2 className="font-semibold text-lg text-foreground">{task.name}</h2>
-              <span className="text-sm text-muted-foreground">
-                até {dayjs(task.date).format('DD/MM/YYYY')}
-              </span>
-            </div>
+          return (
+            <div
+              key={task.id}
+              className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => toggleDone(task.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') toggleDone(task.id); }}
+            >
+              <div className="flex justify-between items-center">
+                <div
+                  className={`font-semibold text-lg ${task.done ? 'line-through text-green-700' : 'text-gray-900'}`}
+                >
+                  {task.name}
+                </div>
+                <div className="text-sm text-gray-600">
+                  até {dayjs(task.date).format('DD/MM/YYYY')}
+                </div>
+              </div>
 
-            {/* Barra de progresso */}
-            <div className="relative mt-3">
-              <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+              {/* Barra de progresso */}
+              <div className="relative mt-4 h-4 rounded-full bg-gray-200 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-500 ease-in-out ${progressColor}`}
                   style={{ width: `${progress * 100}%` }}
                 ></div>
+                <div
+                  className="absolute top-[-6px] h-6 w-6 rounded-full border-2 border-gray-400 bg-white shadow-md"
+                  style={{ left: `calc(${progress * 100}% - 12px)` }}
+                ></div>
               </div>
-              <div
-                className="absolute top-[-6px] h-5 w-5 rounded-full border border-gray-500 bg-white shadow"
-                style={{ left: `calc(${progress * 100}% - 10px)` }}
-              ></div>
-            </div>
 
-            <div className="mt-4 flex gap-3 items-center">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={task.done}
-                  onChange={() => toggleDone(task.id)}
-                />
-                <span className="text-sm">Feito</span>
-              </label>
-              <Button size="sm" variant="outline" onClick={() => handleOpenForm(task)}>
-                Editar
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => removeTask(task.id)}>
-                Remover
-              </Button>
+              <div className="mt-4 flex justify-end gap-3">
+                <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleOpenForm(task); }}>
+                  Editar
+                </Button>
+                <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}>
+                  Remover
+                </Button>
+              </div>
             </div>
-          </motion.div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* Modal de formulário */}
       <Dialog open={formOpen} onOpenChange={handleCloseForm}>
@@ -160,7 +154,7 @@ export default function TaskList({ onBack }) {
           <DialogHeader>
             <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <Label htmlFor="task-name">Nome da Tarefa</Label>
               <Input
@@ -168,6 +162,7 @@ export default function TaskList({ onBack }) {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
+                autoFocus
               />
             </div>
             <div>
@@ -178,6 +173,7 @@ export default function TaskList({ onBack }) {
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 required
+                min={dayjs().format('YYYY-MM-DD')}
               />
             </div>
             <DialogFooter className="flex justify-between">
@@ -188,10 +184,10 @@ export default function TaskList({ onBack }) {
 
           <button
             onClick={handleCloseForm}
-            className="absolute top-3 right-3 rounded-full p-1 hover:bg-muted"
+            className="absolute top-3 right-3 rounded-full p-1 hover:bg-gray-200 transition-colors"
             aria-label="Fechar"
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </DialogContent>
       </Dialog>

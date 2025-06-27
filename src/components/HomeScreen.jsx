@@ -147,7 +147,7 @@ const HomeScreen = ({ onCreateParty, onViewParty, onQuickAction }) => {
           <h2 className="text-xl font-bold text-foreground mb-4">
             Ações Rápidas
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex md:flex-1/4 lg:flex-nowrap gap-4">
             <QuickActionCard
               icon="users"
               title="Convidados"
