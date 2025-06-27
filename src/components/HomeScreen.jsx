@@ -161,12 +161,12 @@ const HomeScreen = ({ onCreateParty, onViewParty }) => {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="mb-6 mt-6"
+          className="mb-6 mt-6  "
         >
           <h2 className="text-xl font-bold text-foreground mb-4">
             Ações Rápidas
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex-1/2 lg:flex gap-4 items-center justify-center ">
             <QuickActionCard
               icon="users"
               title="Convidados"
