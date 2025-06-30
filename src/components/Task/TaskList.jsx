@@ -107,7 +107,7 @@ export default function TaskList({ onBack }) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       <div className="flex justify-between items-center border-b pb-4">
-        <h1 className="text-3xl font-bold">🎉 Tarefas da Festa</h1>
+        <h1 className="text-2xl  font-bold ">🎉 Tarefas da Festa</h1>
         <Button className="bg-black text-white cursor-pointer" onClick={onBack} variant="white">← Voltar</Button>
       </div>
 
@@ -172,11 +172,12 @@ export default function TaskList({ onBack }) {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="task-name">Nome</Label>
+              <Label htmlFor="task-name">Descrição</Label>
               <Input
                 id="task-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex: Comprar balões"
                 required
               />
             </div>
