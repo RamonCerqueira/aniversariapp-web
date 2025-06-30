@@ -147,40 +147,46 @@ const HomeScreen = ({ onCreateParty, onViewParty, onQuickAction }) => {
           <h2 className="text-xl font-bold text-foreground mb-4">
             Ações Rápidas
           </h2>
-          <div className="flex md:flex-1/4 lg:flex-nowrap gap-4">
-            <QuickActionCard
-              icon="users"
-              title="Convidados"
-              subtitle="Gerenciar lista"
-              color="#4169E1"
-              onPress={() => handleQuick('guests')}
-              delay={600}
-            />
-            <QuickActionCard
-              icon="utensils"
-              title="Consumo"
-              subtitle="Calcular quantidades"
-              color="#FF1493"
-              onPress={() => handleQuick('consumption')}
-              delay={700}
-            />
-            <QuickActionCard
-              icon="check-circle"
-              title="Tarefas"
-              subtitle="Lista de afazeres"
-              color="#FFD700"
-              onPress={() => handleQuick('checklist')}
-              delay={800}
-            />
-            <QuickActionCard
-              icon="building"
-              title="Fornecedores"
-              subtitle="Encontrar serviços"
-              color="#32CD32"
-              onPress={() => handleQuick('suppliers')}
-              delay={900}
-            />
-          </div>
+     <div className="grid grid-cols-2 sm:flex md:grid-cols-2  gap-4  md:flex  lg:flex lg:flex-nowrap">
+  <QuickActionCard
+    icon="users"
+    title="Convidados"
+    subtitle="Gerenciar lista"
+    color="#4169E1"
+    onPress={() => handleQuick('guests')}
+    delay={600}
+    className="w-full lg:w-auto"
+  />
+  <QuickActionCard
+    icon="utensils"
+    title="Consumo"
+    subtitle="Calcular quantidades"
+    color="#FF1493"
+    onPress={() => handleQuick('consumption')}
+    delay={700}
+    className="w-full lg:w-auto"
+  />
+  <QuickActionCard
+    icon="check-circle"
+    title="Tarefas"
+    subtitle="Lista de afazeres"
+    color="#FFD700"
+    onPress={() => handleQuick('checklist')}
+    delay={800}
+    className="w-full lg:w-auto"
+  />
+  <QuickActionCard
+    icon="building"
+    title="Fornecedores"
+    subtitle="Encontrar serviços"
+    color="#32CD32"
+    onPress={() => handleQuick('suppliers')}
+    delay={900}
+    className="w-full lg:w-auto"
+  />
+</div>
+
+
         </motion.div>
 
         {/* Progresso */}

@@ -108,13 +108,13 @@ export default function TaskList({ onBack }) {
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       <div className="flex justify-between items-center border-b pb-4">
         <h1 className="text-3xl font-bold">🎉 Tarefas da Festa</h1>
-        <Button onClick={onBack} variant="secondary">← Voltar</Button>
+        <Button className="bg-black text-white cursor-pointer" onClick={onBack} variant="white">← Voltar</Button>
       </div>
 
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-medium">{`✔️ ${countDone} de ${total} concluídas`}</h2>
-        <Button onClick={() => handleOpenForm()} size="sm" className="flex items-center gap-2">
-          <PlusCircle className="w-4 h-4" /> Adicionar
+        <Button onClick={() => handleOpenForm()} size="sm" className="flex items-center gap-2 cursor-pointer">
+          <PlusCircle className="w-4 h-4 cursor-pointer" /> Adicionar
         </Button>
       </div>
 
@@ -155,8 +155,8 @@ export default function TaskList({ onBack }) {
                     />
                   </div>
                   <div className="flex justify-end gap-2 mt-3">
-                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleOpenForm(task); }}>Editar</Button>
-                    <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}>Remover</Button>
+                    <Button className="cursor-pointer" size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleOpenForm(task); }}>Editar</Button>
+                    <Button className="cursor-pointer" size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}>Remover</Button>
                   </div>
                 </motion.div>
               );
@@ -215,8 +215,8 @@ export default function TaskList({ onBack }) {
               </select>
             </div>
             <DialogFooter className="flex justify-between pt-2">
-              <Button type="button" variant="ghost" onClick={handleCloseForm}>Cancelar</Button>
-              <Button type="submit">{editingTask ? 'Salvar' : 'Adicionar'}</Button>
+              <Button className="cursor-pointer" type="button" variant="ghost" onClick={handleCloseForm}>Cancelar</Button>
+              <Button className="cursor-pointer" type="submit">{editingTask ? 'Salvar' : 'Adicionar'}</Button>
             </DialogFooter>
           </form>
 
