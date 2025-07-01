@@ -77,19 +77,36 @@ export default function TaskList({ onBack }) {
     handleCloseForm();
   };
 
+  // ✅ MODIFICADO
   const toggleDone = (id) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+    setTasks(tasks.map((t) => {
+      if (t.id === id) {
+        const now = dayjs().format('YYYY-MM-DD');
+        const isMarkingAsDone = !t.done;
+
+        return {
+          ...t,
+          done: isMarkingAsDone,
+          date: isMarkingAsDone ? now : t.date,
+        };
+      }
+      return t;
+    }));
   };
 
   const removeTask = (id) => {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
+  // ✅ MODIFICADO
   const getProgress = (task) => {
+    if (task.done) return 1;
+
     const start = dayjs(task.createdAt).startOf('day');
     const end = dayjs(task.date).startOf('day');
     const totalDays = end.diff(start, 'day');
     const elapsed = dayjs().startOf('day').diff(start, 'day');
+
     if (totalDays <= 0) return 1;
     return Math.min(Math.max(elapsed / totalDays, 0), 1);
   };
@@ -107,8 +124,10 @@ export default function TaskList({ onBack }) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       <div className="flex justify-between items-center border-b pb-4">
-        <h1 className="text-2xl  font-bold ">🎉 Tarefas da Festa</h1>
-        <Button className="bg-black text-white cursor-pointer" onClick={onBack} variant="white">← Voltar</Button>
+        <h1 className="text-2xl font-bold">🎉 Tarefas da Festa</h1>
+        <Button className="bg-black text-white cursor-pointer" onClick={onBack} variant="white">
+          ← Voltar
+        </Button>
       </div>
 
       <div className="flex justify-between items-center">
@@ -129,7 +148,7 @@ export default function TaskList({ onBack }) {
 
       {groupedByCategoria.map((grupo) => (
         <div key={grupo.nome} className="space-y-4">
-          <h3 className="text-lg font-semibold mt-6">🎯 {grupo.nome}</h3>
+          <h3 className="text-lg font-semibold mt-2">🎯 {grupo.nome}</h3>
           {grupo.tarefas.length === 0 ? (
             <p className="text-sm text-zinc-500 italic">Nenhuma tarefa nesta categoria.</p>
           ) : (
@@ -144,13 +163,13 @@ export default function TaskList({ onBack }) {
                   className="p-4 border rounded-lg shadow hover:shadow-lg transition cursor-pointer"
                   onClick={() => toggleDone(task.id)}
                 >
-                  <div className="flex justify-between items-center">
-                    <span className={`font-semibold ${task.done ? 'line-through text-green-500' : ''}`}>{task.name}</span>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className={`font-semibold ${task.done ? 'line-through text-black' : ''}`}>{task.name}</span>
                     <span className="text-sm text-zinc-500">{task.prioridade} • {dayjs(task.date).format('DD/MM')}</span>
                   </div>
                   <div className="w-full h-2 bg-zinc-200 rounded mt-3">
                     <div
-                      className="h-full bg-blue-500 rounded"
+                      className="h-full bg-green-500 rounded"
                       style={{ width: `${progress * 100}%` }}
                     />
                   </div>
@@ -166,13 +185,13 @@ export default function TaskList({ onBack }) {
       ))}
 
       <Dialog open={formOpen} onOpenChange={handleCloseForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md sm:w-4/5 md:w-4/5 w-4/5 mx-auto">
           <DialogHeader>
             <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="task-name">Descrição</Label>
+              <Label className="mb-2" htmlFor="task-name">Descrição</Label>
               <Input
                 id="task-name"
                 value={form.name}
@@ -182,7 +201,7 @@ export default function TaskList({ onBack }) {
               />
             </div>
             <div>
-              <Label htmlFor="task-date">Data</Label>
+              <Label className="mb-2" htmlFor="task-date">Data</Label>
               <Input
                 id="task-date"
                 type="date"
@@ -193,7 +212,7 @@ export default function TaskList({ onBack }) {
               />
             </div>
             <div>
-              <Label htmlFor="task-cat">Categoria</Label>
+              <Label className="mb-2" htmlFor="task-cat">Categoria</Label>
               <Input
                 id="task-cat"
                 placeholder="Ex: Buffet, Decoração"
@@ -203,7 +222,7 @@ export default function TaskList({ onBack }) {
               />
             </div>
             <div>
-              <Label htmlFor="task-prio">Prioridade</Label>
+              <Label className="mb-2" htmlFor="task-prio">Prioridade</Label>
               <select
                 id="task-prio"
                 className="w-full border rounded px-3 py-2"
@@ -226,7 +245,7 @@ export default function TaskList({ onBack }) {
             className="absolute top-3 right-3 rounded-full p-1 hover:bg-zinc-100 transition"
             aria-label="Fechar"
           >
-            <X size={20} />
+            <X size={25} />
           </button>
         </DialogContent>
       </Dialog>
