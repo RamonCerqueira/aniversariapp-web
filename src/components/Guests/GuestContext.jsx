@@ -1,17 +1,18 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
+import { api } from '../../services/api.js';
+import { useParty } from '../../contexts/PartyContext.jsx';
 
 // Ações disponíveis no reducer
 const ACTIONS = {
   LOAD: 'load_guests',
   ADD: 'add_guest',
   UPDATE: 'update_guest',
-  REMOVE: 'remove_guest',
-  IMPORT: 'import_guests'
+  REMOVE: 'remove_guest'
 };
 
 // Estado inicial
 const initialState = {
-  guests: [] // array de objetos { id, name, phone, status, companions, notes }
+  guests: [] // array de convidados compatíveis com o frontend { id, name, phone, status, accompany }
 };
 
 // Reducer para gerenciar ações de convidados
@@ -31,13 +32,6 @@ function guestReducer(state, action) {
         ...state,
         guests: state.guests.filter(g => g.id !== action.payload)
       };
-    case ACTIONS.IMPORT:
-      // mescla e remove duplicatas por telefone
-      const merged = [...state.guests];
-      action.payload.forEach(newG => {
-        if (!merged.some(g => g.phone === newG.phone)) merged.push(newG);
-      });
-      return { ...state, guests: merged };
     default:
       return state;
   }
@@ -47,26 +41,118 @@ const GuestContext = createContext();
 
 export function GuestProvider({ children }) {
   const [state, dispatch] = useReducer(guestReducer, initialState);
+  const { currentParty } = useParty();
 
-  // Carregar do localStorage ao montar
+  // Carrega convidados toda vez que a festa selecionada mudar
   useEffect(() => {
-    const data = localStorage.getItem('guests');
-    if (data) dispatch({ type: ACTIONS.LOAD, payload: JSON.parse(data) });
-  }, []);
+    if (currentParty?.id) {
+      loadGuestsOfParty(currentParty.id);
+    } else {
+      dispatch({ type: ACTIONS.LOAD, payload: [] });
+    }
+  }, [currentParty]);
 
-  // Persistir no localStorage sempre que mudar
-  useEffect(() => {
-    localStorage.setItem('guests', JSON.stringify(state.guests));
-  }, [state.guests]);
+  const loadGuestsOfParty = async (partyId) => {
+    try {
+      const dbGuests = await api.guests.getAll(partyId);
+      // Mapeia de 'companions' (banco) para 'accompany' (frontend) para manter compatibilidade total
+      const parsedGuests = dbGuests.map(g => ({
+        id: g.id,
+        partyId: g.partyId,
+        name: g.name,
+        phone: g.phone,
+        accompany: g.companions,
+        status: g.status
+      }));
+      dispatch({ type: ACTIONS.LOAD, payload: parsedGuests });
+    } catch (error) {
+      console.error('Erro ao buscar convidados do banco:', error);
+    }
+  };
 
-  // Funções do contexto
-  const addGuest = guest => dispatch({ type: ACTIONS.ADD, payload: guest });
-  const updateGuest = guest => dispatch({ type: ACTIONS.UPDATE, payload: guest });
-  const removeGuest = id => dispatch({ type: ACTIONS.REMOVE, payload: id });
-  const importGuests = list => dispatch({ type: ACTIONS.IMPORT, payload: list });
+  const addGuest = async (guestData) => {
+    if (!currentParty) return;
+    try {
+      const created = await api.guests.create({
+        partyId: currentParty.id,
+        name: guestData.name,
+        phone: guestData.phone,
+        companions: guestData.accompany,
+        status: guestData.status
+      });
+
+      const parsedGuest = {
+        id: created.id,
+        partyId: created.partyId,
+        name: created.name,
+        phone: created.phone,
+        accompany: created.companions,
+        status: created.status
+      };
+
+      dispatch({ type: ACTIONS.ADD, payload: parsedGuest });
+    } catch (error) {
+      console.error('Erro ao criar convidado na API:', error);
+      throw error;
+    }
+  };
+
+  const addGuestsBulk = async (guestsList) => {
+    if (!currentParty) return;
+    try {
+      const dbGuests = await api.guests.createBulk(currentParty.id, guestsList);
+      const parsedGuests = dbGuests.map(g => ({
+        id: g.id,
+        partyId: g.partyId,
+        name: g.name,
+        phone: g.phone,
+        accompany: g.companions,
+        status: g.status
+      }));
+      dispatch({ type: ACTIONS.LOAD, payload: parsedGuests });
+    } catch (error) {
+      console.error('Erro ao importar convidados em lote na API:', error);
+      throw error;
+    }
+  };
+
+  const updateGuest = async (guestData) => {
+    try {
+      const updated = await api.guests.update(guestData.id, {
+        name: guestData.name,
+        phone: guestData.phone,
+        companions: guestData.accompany,
+        status: guestData.status
+      });
+
+      const parsedGuest = {
+        id: updated.id,
+        partyId: updated.partyId,
+        name: updated.name,
+        phone: updated.phone,
+        accompany: updated.companions,
+        status: updated.status
+      };
+
+      dispatch({ type: ACTIONS.UPDATE, payload: parsedGuest });
+    } catch (error) {
+      console.error('Erro ao atualizar convidado na API:', error);
+      throw error;
+    }
+  };
+
+  const removeGuest = async (id) => {
+    try {
+      await api.guests.delete(id);
+      dispatch({ type: ACTIONS.REMOVE, payload: id });
+    } catch (error) {
+      console.error('Erro ao remover convidado na API:', error);
+      throw error;
+    }
+  };
 
   return (
-    <GuestContext.Provider value={{ ...state, addGuest, updateGuest, removeGuest, importGuests }}>
+    <GuestContext.Provider value={{ ...state, addGuest, addGuestsBulk, updateGuest, removeGuest }}>
       {children}
     </GuestContext.Provider>
   );

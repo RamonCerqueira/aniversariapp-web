@@ -1,11 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Bell, Camera } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { Bell, Camera, Award } from 'lucide-react';
 
-export const AnimatedHeader = ({ userName, onNotificationPress }) => {
+export const AnimatedHeader = ({ userName, onNotificationPress, onPlanClick }) => {
+  const { user } = useAuth();
   const [selectedImage, setSelectedImage] = useState(null);
   const fileInputRef = useRef(null);
+
+  const planName = user?.plan || 'FREE';
 
   // Manipula clique no ícone da câmera
   const handleCameraClick = () => {
@@ -29,9 +33,25 @@ export const AnimatedHeader = ({ userName, onNotificationPress }) => {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex flex-col items-start"
         >
           <p className="text-white text-lg">Olá,</p>
-          <h1 className="text-white text-2xl font-bold">{userName}</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-white text-2xl font-bold">{userName}</h1>
+            <button
+              onClick={onPlanClick}
+              className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold px-2 py-1 rounded-full text-white cursor-pointer shadow-sm border border-white/20 transition-all hover:scale-105 hover:bg-white/10 ${
+                planName === 'MASTER'
+                  ? 'bg-secondary-custom'
+                  : planName === 'PREMIUM'
+                  ? 'bg-accent-custom text-zinc-950 font-bold'
+                  : 'bg-white/10'
+              }`}
+            >
+              <Award size={10} />
+              {planName}
+            </button>
+          </div>
         </motion.div>
 
         {/* Ações do canto direito */}

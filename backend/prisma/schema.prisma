@@ -1,0 +1,122 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ORGANIZER
+  SUPPLIER
+  ADMIN
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+  MASTER
+  SUPPLIER_MONTHLY
+}
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  password        String
+  birthDate       DateTime
+  role            UserRole         @default(ORGANIZER)
+  plan            PlanType         @default(FREE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  parties         Party[]
+  supplierProfile SupplierProfile?
+}
+
+model Party {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  type        String
+  date        DateTime
+  location    String
+  description String?
+  guestCount  Int      @default(0)
+  budget      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  guests      Guest[]
+  tasks       Task[]
+  leads       Lead[]
+  expenses    Expense[]
+}
+
+model Guest {
+  id         String   @id @default(uuid())
+  partyId    String
+  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  name       String
+  phone      String
+  companions Int      @default(0)
+  status     String   @default("pending") // confirmed | pending | declined
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Task {
+  id         String   @id @default(uuid())
+  partyId    String
+  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  name       String
+  date       DateTime
+  categoria  String
+  prioridade String
+  done       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SupplierProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String
+  cnpj        String?  // CNPJ se tiver
+  category    String   // Buffet, DJ, Bartender, etc.
+  capacityMin Int      @default(0)
+  capacityMax Int      @default(10000)
+  phone       String
+  instagram   String?
+  city        String
+  description String
+  images      String[] // URLs do portfólio
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  leads       Lead[]
+}
+
+model Lead {
+  id         String          @id @default(uuid())
+  partyId    String
+  party      Party           @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   SupplierProfile @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  status     String          @default("pending") // pending | contacted | closed
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  partyId   String
+  party     Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  name      String
+  amount    Float
+  category  String   // Comida, Bebida, Espaço, etc.
+  paid      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

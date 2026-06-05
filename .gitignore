@@ -143,3 +143,5 @@ Thumbs.db
 # Local development
 .vercel
 
+DEPLOY.md
+ter --allow-unrelated-histories

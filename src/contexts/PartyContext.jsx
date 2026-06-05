@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { api } from '../services/api';
 
 const PartyContext = createContext();
 
@@ -14,74 +15,89 @@ export const PartyProvider = ({ children }) => {
     
     setIsLoading(true);
     try {
-      const storedParties = localStorage.getItem(`aniversariapp_parties_${user.id}`);
-      if (storedParties) {
-        const parsedParties = JSON.parse(storedParties).map((party) => ({
-          ...party,
-          date: new Date(party.date),
-          createdAt: new Date(party.createdAt),
-          updatedAt: new Date(party.updatedAt),
-        }));
-        setParties(parsedParties);
+      const dbParties = await api.parties.getAll();
+      const parsedParties = dbParties.map((party) => ({
+        ...party,
+        date: new Date(party.date),
+        createdAt: new Date(party.createdAt),
+        updatedAt: new Date(party.updatedAt),
+      }));
+      setParties(parsedParties);
+      
+      // Seta a primeira festa como atual se não houver nenhuma setada
+      if (parsedParties.length > 0 && !currentParty) {
+        setCurrentParty(parsedParties[0]);
       }
     } catch (error) {
-      console.error('Erro ao carregar festas:', error);
+      console.error('Erro ao carregar festas da API:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const saveParties = async (updatedParties) => {
-    if (!user) return;
-    
-    try {
-      localStorage.setItem(`aniversariapp_parties_${user.id}`, JSON.stringify(updatedParties));
-    } catch (error) {
-      console.error('Erro ao salvar festas:', error);
-      throw error;
     }
   };
 
   const createParty = async (partyData) => {
     if (!user) throw new Error('Usuário não autenticado');
 
-    const newParty = {
-      ...partyData,
-      id: Date.now().toString(),
-      userId: user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    try {
+      const created = await api.parties.create(partyData);
+      const parsedParty = {
+        ...created,
+        date: new Date(created.date),
+        createdAt: new Date(created.createdAt),
+        updatedAt: new Date(created.updatedAt),
+      };
 
-    const updatedParties = [...parties, newParty];
-    setParties(updatedParties);
-    await saveParties(updatedParties);
-    
-    return newParty;
+      const updatedParties = [...parties, parsedParty];
+      setParties(updatedParties);
+      
+      if (!currentParty) {
+        setCurrentParty(parsedParty);
+      }
+      
+      return parsedParty;
+    } catch (error) {
+      console.error('Erro ao criar festa na API:', error);
+      throw error;
+    }
   };
 
   const updateParty = async (partyId, partyData) => {
-    const updatedParties = parties.map(party =>
-      party.id === partyId
-        ? { ...party, ...partyData, updatedAt: new Date() }
-        : party
-    );
-    
-    setParties(updatedParties);
-    await saveParties(updatedParties);
+    try {
+      const updated = await api.parties.update(partyId, partyData);
+      const parsedParty = {
+        ...updated,
+        date: new Date(updated.date),
+        createdAt: new Date(updated.createdAt),
+        updatedAt: new Date(updated.updatedAt),
+      };
 
-    if (currentParty?.id === partyId) {
-      setCurrentParty(updatedParties.find(p => p.id === partyId) || null);
+      const updatedParties = parties.map(party =>
+        party.id === partyId ? parsedParty : party
+      );
+      
+      setParties(updatedParties);
+
+      if (currentParty?.id === partyId) {
+        setCurrentParty(parsedParty);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar festa na API:', error);
+      throw error;
     }
   };
 
   const deleteParty = async (partyId) => {
-    const updatedParties = parties.filter(party => party.id !== partyId);
-    setParties(updatedParties);
-    await saveParties(updatedParties);
+    try {
+      await api.parties.delete(partyId);
+      const updatedParties = parties.filter(party => party.id !== partyId);
+      setParties(updatedParties);
 
-    if (currentParty?.id === partyId) {
-      setCurrentParty(null);
+      if (currentParty?.id === partyId) {
+        setCurrentParty(updatedParties.length > 0 ? updatedParties[0] : null);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir festa na API:', error);
+      throw error;
     }
   };
 
@@ -115,4 +131,3 @@ export const useParty = () => {
   }
   return context;
 };
-

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormInput, FormTextarea, FormSelect, FormButton } from '../components/FormComponents';
 import { useParty } from '../contexts/PartyContext';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PartyDetailsScreen = ({ partyId, onBack }) => {
   const { createParty, updateParty, getParty } = useParty();
@@ -87,52 +88,65 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
 
       if (isEditing && partyId) {
         await updateParty(partyId, partyData);
-        alert('Festa atualizada com sucesso!');
+        toast.success('Festa atualizada com sucesso! 🎉', {
+          position: 'top-center',
+          className: 'rounded-xl font-bold'
+        });
       } else {
         await createParty(partyData);
-        alert('Festa criada com sucesso!');
+        toast.success('Festa criada com sucesso! 🎂', {
+          position: 'top-center',
+          className: 'rounded-xl font-bold'
+        });
       }
 
       onBack();
     } catch (error) {
-      alert('Falha ao salvar festa. Tente novamente.');
+      toast.error('Falha ao salvar festa. Tente novamente.', {
+        position: 'top-center',
+        className: 'rounded-xl font-bold animate-shake'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 relative overflow-hidden transition-colors duration-300">
+      {/* Luzes aurorais de fundo */}
+      <div className="absolute top-[-10%] left-[-10%] w-[350px] h-[350px] rounded-full bg-primary/20 dark:bg-primary/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[350px] h-[350px] rounded-full bg-secondary/20 dark:bg-secondary/10 blur-[100px] pointer-events-none" />
+
       {/* Header */}
-      <div className="bg-primary-custom pt-12 pb-6 px-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-primary pt-12 pb-10 px-6 text-white shadow-lg relative overflow-hidden">
+        <div className="max-w-4xl mx-auto flex items-center justify-between relative z-10">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="text-white hover:bg-white/20 mr-4"
+              className="text-white hover:bg-white/20 mr-4 rounded-full"
             >
               <ArrowLeft size={24} />
             </Button>
-            <h1 className="text-white text-2xl font-bold">
+            <h1 className="text-xl font-bold tracking-tight">
               {isEditing ? 'Editar Festa' : 'Nova Festa'}
             </h1>
           </div>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="px-6 -mt-4 max-w-4xl mx-auto">
+      {/* Formulário */}
+      <div className="px-6 -mt-6 max-w-4xl mx-auto relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
+          <Card className="shadow-2xl rounded-3xl border border-border/50 bg-card/75 backdrop-blur-lg">
+            <CardContent className="p-6 md:p-8">
               <form onSubmit={handleSave} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
                   <FormInput
                     label="Nome da Festa"
                     type="text"
@@ -199,19 +213,19 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
                   rows={3}
                 />
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onBack}
-                    className="flex-1"
+                    className="flex-1 py-6 rounded-xl font-bold shadow-sm"
                   >
                     Cancelar
                   </Button>
                   <FormButton
                     type="submit"
                     loading={isLoading}
-                    className="flex-1"
+                    className="flex-1 py-6 rounded-xl font-bold shadow-md shadow-primary/10"
                   >
                     {isEditing ? 'Atualizar Festa' : 'Criar Festa'}
                   </FormButton>

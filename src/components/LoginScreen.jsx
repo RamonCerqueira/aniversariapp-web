@@ -1,186 +1,314 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { FormInput, FormButton } from '../components/FormComponents';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { Gift, Mail, User, Calendar } from 'lucide-react';
+import { 
+  Gift, 
+  User, 
+  Mail, 
+  Calendar, 
+  ArrowRight,
+  Briefcase, 
+  Building,
+  Phone,
+  MapPin,
+  Instagram,
+  AlignLeft,
+  ChevronLeft
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-const LoginScreen = ({ onLoginSuccess }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    birthDate: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+export default function LoginScreen({ onLoginSuccess }) {
   const { login } = useAuth();
+  
+  const [isSupplierSignup, setIsSupplierSignup] = useState(false);
+  const [supplierStep, setSupplierStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const validateForm = () => {
+  // Organizer Form
+  const [organizerForm, setOrganizerForm] = useState({
+    name: '', email: '', birthDate: '',
+  });
+
+  // Supplier Form
+  const [supplierForm, setSupplierForm] = useState({
+    name: '', email: '', birthDate: '', companyName: '', cnpj: '',
+    category: 'Buffet', phone: '', instagram: '', city: '', description: '',
+  });
+
+  const categories = ['Buffet', 'Decoração', 'DJ & Som', 'Bartender', 'Fotografia', 'Brinquedos', 'Espaço / Salão', 'Outros'];
+
+  const validateOrganizerForm = () => {
     const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'E-mail é obrigatório';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'E-mail inválido';
-    }
-
-    if (!formData.birthDate.trim()) {
-      newErrors.birthDate = 'Data de aniversário é obrigatória';
-    }
-
+    if (!organizerForm.name.trim()) newErrors.name = 'Obrigatório';
+    if (!organizerForm.email.trim()) newErrors.email = 'Obrigatório';
+    if (!organizerForm.birthDate.trim()) newErrors.birthDate = 'Obrigatório';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async (e) => {
+  const handleOrganizerLogin = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
+    if (!validateOrganizerForm()) return;
     setIsLoading(true);
     try {
-      const user = {
-        id: Date.now().toString(),
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        birthDate: new Date(formData.birthDate),
-      };
-
-      await login(user);
+      await login({
+        name: organizerForm.name.trim(),
+        email: organizerForm.email.trim(),
+        birthDate: new Date(organizerForm.birthDate),
+        role: 'ORGANIZER',
+      });
+      toast.success('Bem-vindo ao Celebrate! 🎉', { position: 'top-center' });
       onLoginSuccess();
     } catch (error) {
-      alert('Falha ao fazer login. Tente novamente.');
+      toast.error('Erro ao acessar.', { position: 'top-center' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSupplierLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await login({
+        name: supplierForm.name.trim(),
+        email: supplierForm.email.trim(),
+        birthDate: new Date(supplierForm.birthDate),
+        role: 'SUPPLIER',
+        supplierProfile: {
+          companyName: supplierForm.companyName.trim(),
+          cnpj: supplierForm.cnpj.trim(),
+          category: supplierForm.category,
+          phone: supplierForm.phone.trim(),
+          city: supplierForm.city.trim(),
+          description: supplierForm.description.trim(),
+        }
+      });
+      toast.success('Negócio parceiro ativado! 💼', { position: 'top-center' });
+      onLoginSuccess();
+    } catch (error) {
+      toast.error('Erro ao cadastrar negócio.', { position: 'top-center' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ 
-              type: "spring",
-              delay: 0.2,
-              damping: 15,
-              stiffness: 150 
-            }}
-            className="w-24 h-24 bg-primary-custom rounded-full flex items-center justify-center mx-auto mb-6"
-          >
-            <Gift size={40} className="text-white" />
-          </motion.div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            AniversariApp
-          </h1>
-          <p className="text-lg text-muted-foreground text-center">
-            Organize sua festa de aniversário perfeita
+    <div className="min-h-screen bg-background text-foreground flex font-sans overflow-hidden">
+      
+      {/* LEFT PANEL - Elegant Image Showcase */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <div className="absolute inset-0 bg-black/10 z-10" />
+        <img 
+          src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1400&auto=format&fit=crop" 
+          alt="Elegant Wedding Celebration" 
+          className="object-cover w-full h-full"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
+        
+        <div className="absolute bottom-12 left-12 z-20 text-white space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 glass-panel rounded-2xl flex items-center justify-center">
+              <Gift size={24} strokeWidth={1.5} className="text-white" />
+            </div>
+            <span className="font-black text-3xl tracking-tight">Celebrate!</span>
+          </div>
+          <p className="text-white/80 text-lg max-w-md font-medium">
+            A plataforma definitiva de alta costura para gerenciar festas inesquecíveis e momentos únicos.
           </p>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <FormInput
-                  label="Nome completo"
-                  type="text"
-                  placeholder="Digite seu nome"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  error={errors.name}
-                  required
-                />
+      {/* RIGHT PANEL - Minimalist Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative">
+        
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
-                <FormInput
-                  label="E-mail"
-                  type="email"
-                  placeholder="Digite seu e-mail"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  error={errors.email}
-                  required
-                />
+        <div className="w-full max-w-sm space-y-8 relative z-10">
+          
+          <div className="text-center lg:text-left space-y-2">
+            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto lg:mx-0 mb-4 lg:hidden">
+              <Gift size={24} strokeWidth={1.5} className="text-primary" />
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              {isSupplierSignup ? 'Seu Negócio' : 'Acesse seu Convite'}
+            </h1>
+            <p className="text-sm text-muted-foreground font-medium">
+              {isSupplierSignup 
+                ? 'Cadastre-se como fornecedor parceiro.' 
+                : 'Insira seus dados para planejar seu próximo evento.'}
+            </p>
+          </div>
 
-                <FormInput
-                  label="Data de aniversário"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
-                  error={errors.birthDate}
-                  required
-                />
+          <AnimatePresence mode="wait">
+            {!isSupplierSignup ? (
+              <motion.div key="organizer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                <form onSubmit={handleOrganizerLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nome Completo</label>
+                    <div className="relative">
+                      <User size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={organizerForm.name}
+                        onChange={e => setOrganizerForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                        placeholder="Ex: Maria Silva"
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <FormButton
-                  type="submit"
-                  loading={isLoading}
-                  className="w-full mt-6"
-                >
-                  {isLoading ? 'Entrando...' : 'Entrar'}
-                </FormButton>
-              </form>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">E-mail Pessoal</label>
+                    <div className="relative">
+                      <Mail size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="email"
+                        value={organizerForm.email}
+                        onChange={e => setOrganizerForm(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                        placeholder="maria@exemplo.com"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              {/* Social Login Placeholder */}
-              <div className="mt-6">
-                <p className="text-center text-muted-foreground mb-4">
-                  Ou entre com
-                </p>
-                <div className="flex justify-center space-x-4">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-card border border-border rounded-lg p-3 hover:bg-muted transition-colors"
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Data de Aniversário</label>
+                    <div className="relative">
+                      <Calendar size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="date"
+                        value={organizerForm.birthDate}
+                        onChange={e => setOrganizerForm(prev => ({ ...prev, birthDate: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 mt-4 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-premium-hover transition-all cursor-pointer"
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                      <path fill="#DB4437" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-card border border-border rounded-lg p-3 hover:bg-muted transition-colors"
+                    <span>Acessar Painel</span>
+                    <ArrowRight size={16} strokeWidth={2} />
+                  </button>
+                </form>
+
+                <div className="pt-6 border-t border-border">
+                  <button 
+                    onClick={() => setIsSupplierSignup(true)}
+                    className="w-full p-4 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 flex items-center justify-between transition-all cursor-pointer group"
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#000000">
-                      <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001.012.001z"/>
-                    </svg>
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-card border border-border rounded-lg p-3 hover:bg-muted transition-colors"
-                  >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#25D366">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.085"/>
-                    </svg>
-                  </motion.button>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
+                        <Briefcase size={16} strokeWidth={1.5} className="text-secondary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-black text-foreground">Sou Fornecedor</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground">Cadastrar negócio parceiro</p>
+                      </div>
+                    </div>
+                    <ArrowRight size={16} strokeWidth={1.5} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div key="supplier" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                
+                <form onSubmit={handleSupplierLogin} className="space-y-4">
+                  {/* Supplier Form simplified for Elegance */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sua Empresa</label>
+                    <div className="relative">
+                      <Building size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={supplierForm.companyName}
+                        onChange={e => setSupplierForm(prev => ({ ...prev, companyName: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                        placeholder="Nome Fantasia"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Categoria</label>
+                    <select
+                      value={supplierForm.category}
+                      onChange={e => setSupplierForm(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Seu Nome</label>
+                    <input
+                      type="text"
+                      value={supplierForm.name}
+                      onChange={e => setSupplierForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                      placeholder="Nome do responsável"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">E-mail</label>
+                    <input
+                      type="email"
+                      value={supplierForm.email}
+                      onChange={e => setSupplierForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                      placeholder="contato@empresa.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nascimento</label>
+                    <input
+                      type="date"
+                      value={supplierForm.birthDate}
+                      onChange={e => setSupplierForm(prev => ({ ...prev, birthDate: e.target.value }))}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
+                      required
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsSupplierSignup(false)}
+                      className="w-1/3 py-4 bg-card border border-border hover:bg-muted text-foreground font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <ChevronLeft size={16} strokeWidth={2} /> Voltar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-2/3 py-4 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center shadow-premium-hover transition-all cursor-pointer"
+                    >
+                      Registrar
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        </div>
       </div>
     </div>
   );
-};
-
-export default LoginScreen;
-
+}
