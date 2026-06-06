@@ -1,9 +1,7 @@
 import Stripe from 'stripe';
 import { prisma } from '../server.js';
 
-const stripeInstance = new Stripe(
-  process.env.STRIPE_SECRET_KEY || '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'
-);
+const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createCheckoutSession = async (req, res) => {
   const { plan } = req.body;
