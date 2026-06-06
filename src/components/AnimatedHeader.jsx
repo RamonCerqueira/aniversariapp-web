@@ -37,7 +37,7 @@ export const AnimatedHeader = ({ userName, onNotificationPress, onPlanClick }) =
         >
           <p className="text-white text-lg">Olá,</p>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-white text-2xl font-bold">{userName}</h1>
+            <h1 className="text-white text-2xl font-bold uppercase">{userName}</h1>
             <button
               onClick={onPlanClick}
               className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold px-2 py-1 rounded-full text-white cursor-pointer shadow-sm border border-white/20 transition-all hover:scale-105 hover:bg-white/10 ${

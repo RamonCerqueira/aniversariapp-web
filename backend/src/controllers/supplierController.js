@@ -90,7 +90,11 @@ export const getMyProfile = async (req, res) => {
 
 // Criar ou atualizar perfil de portfólio (Privado - atualiza a role do usuário para SUPPLIER)
 export const upsertProfile = async (req, res) => {
-  const { companyName, cnpj, category, capacityMin, capacityMax, phone, instagram, city, description, images } = req.body;
+  const { 
+    companyName, cnpj, category, capacityMin, capacityMax, phone, instagram, city, description, 
+    images, services, blockedDates, logo, foundationYear, socials, differentials, portfolio, 
+    packages, locationMap, pricing 
+  } = req.body;
 
   try {
     if (!companyName || !category || !phone || !city || !description) {
@@ -112,6 +116,16 @@ export const upsertProfile = async (req, res) => {
         city,
         description,
         images: images || [],
+        services: services || [],
+        blockedDates: blockedDates || [],
+        logo,
+        foundationYear: foundationYear ? parseInt(foundationYear) : null,
+        socials: socials || {},
+        differentials: differentials || [],
+        portfolio: portfolio || [],
+        packages: packages || [],
+        locationMap: locationMap || {},
+        pricing: pricing || {},
       },
       update: {
         companyName,
@@ -124,6 +138,16 @@ export const upsertProfile = async (req, res) => {
         city,
         description,
         images: images || [],
+        services: services || [],
+        blockedDates: blockedDates || [],
+        logo,
+        foundationYear: foundationYear ? parseInt(foundationYear) : null,
+        socials: socials || {},
+        differentials: differentials || [],
+        portfolio: portfolio || [],
+        packages: packages || [],
+        locationMap: locationMap || {},
+        pricing: pricing || {},
       }
     });
 
@@ -171,5 +195,72 @@ export const deleteProfile = async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir perfil de fornecedor:', error);
     res.status(500).json({ error: 'Erro ao excluir perfil de fornecedor' });
+  }
+};
+
+// Adicionar avaliação (Review)
+export const addReview = async (req, res) => {
+  const { id } = req.params;
+  const { rating, comment, authorName } = req.body;
+
+  try {
+    const review = await prisma.supplierReview.create({
+      data: {
+        supplierId: id,
+        rating: parseInt(rating),
+        comment,
+        authorName: authorName || 'Cliente Anônimo'
+      }
+    });
+    res.status(201).json(review);
+  } catch (error) {
+    console.error('Erro ao adicionar avaliação:', error);
+    res.status(500).json({ error: 'Erro ao adicionar avaliação' });
+  }
+};
+
+// Obter avaliações
+export const getReviews = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const reviews = await prisma.supplierReview.findMany({
+      where: { supplierId: id },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(reviews);
+  } catch (error) {
+    console.error('Erro ao buscar avaliações:', error);
+    res.status(500).json({ error: 'Erro ao buscar avaliações' });
+  }
+};
+
+// Incrementar visualização
+export const incrementView = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const supplier = await prisma.supplierProfile.findUnique({
+      where: { id },
+      select: { viewStats: true }
+    });
+
+    if (!supplier) {
+      return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    }
+
+    const currentStats = supplier.viewStats ? (typeof supplier.viewStats === 'string' ? JSON.parse(supplier.viewStats) : supplier.viewStats) : { totalViews: 0, clickToChat: 0, saveCount: 0 };
+    
+    currentStats.totalViews = (currentStats.totalViews || 0) + 1;
+
+    await prisma.supplierProfile.update({
+      where: { id },
+      data: { viewStats: currentStats }
+    });
+
+    res.json({ success: true, viewStats: currentStats });
+  } catch (error) {
+    console.error('Erro ao incrementar visualização:', error);
+    res.status(500).json({ error: 'Erro ao incrementar visualização' });
   }
 };

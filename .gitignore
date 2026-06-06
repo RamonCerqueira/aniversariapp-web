@@ -145,3 +145,15 @@ Thumbs.db
 
 DEPLOY.md
 ter --allow-unrelated-histories
+
+# WhatsApp Web JS
+.wwebjs_auth/
+.wwebjs_cache/
+backend/.wwebjs_auth/
+backend/.wwebjs_cache/
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3

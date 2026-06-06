@@ -11,8 +11,8 @@ export const requireAuth = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super-secret-jwt-key-aniversariapp-2026');
-    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super-secret-jwt-key-Celebrate-2026');
+
     // Verifica se o usuário ainda existe no banco
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },

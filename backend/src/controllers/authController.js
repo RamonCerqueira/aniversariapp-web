@@ -4,8 +4,8 @@ import { prisma } from '../server.js';
 
 const generateToken = (id) => {
   return jwt.sign(
-    { id }, 
-    process.env.JWT_SECRET || 'super-secret-jwt-key-aniversariapp-2026', 
+    { id },
+    process.env.JWT_SECRET || 'super-secret-jwt-key-Celebrate-2026',
     { expiresIn: '7d' }
   );
 };
@@ -87,13 +87,13 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ error: 'E-mail ou senha incorretos' });
+      return res.status(400).json({ error: 'Usuário não cadastrado, cadastre-se agora' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(400).json({ error: 'E-mail ou senha incorretos' });
+      return res.status(400).json({ error: 'Senha incorreta' });
     }
 
     const token = generateToken(user.id);

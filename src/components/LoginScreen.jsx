@@ -16,14 +16,22 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AnimatedLogo from './AnimatedLogo';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LoginScreen({ onLoginSuccess }) {
-  const { login } = useAuth();
+  const { loginUser, registerUser } = useAuth();
   
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [isSupplierSignup, setIsSupplierSignup] = useState(false);
   const [supplierStep, setSupplierStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Login Form
+  const [loginForm, setLoginForm] = useState({
+    email: '', birthDate: '',
+  });
 
   // Organizer Form
   const [organizerForm, setOrganizerForm] = useState({
@@ -33,7 +41,7 @@ export default function LoginScreen({ onLoginSuccess }) {
   // Supplier Form
   const [supplierForm, setSupplierForm] = useState({
     name: '', email: '', birthDate: '', companyName: '', cnpj: '',
-    category: 'Buffet', phone: '', instagram: '', city: '', description: '',
+    category: 'Buffet', otherCategory: '', phone: '', instagram: '', city: '', description: '',
   });
 
   const categories = ['Buffet', 'Decoração', 'DJ & Som', 'Bartender', 'Fotografia', 'Brinquedos', 'Espaço / Salão', 'Outros'];
@@ -47,12 +55,30 @@ export default function LoginScreen({ onLoginSuccess }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleDirectLogin = async (e) => {
+    e.preventDefault();
+    if (!loginForm.email.trim() || !loginForm.birthDate.trim()) {
+      toast.error('Preencha os campos de login.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await loginUser(loginForm.email.trim(), new Date(loginForm.birthDate));
+      toast.success('Bem-vindo de volta! 🎉', { position: 'top-center' });
+      onLoginSuccess();
+    } catch (error) {
+      toast.error(error.message || 'Credenciais inválidas.', { position: 'top-center' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleOrganizerLogin = async (e) => {
     e.preventDefault();
     if (!validateOrganizerForm()) return;
     setIsLoading(true);
     try {
-      await login({
+      await registerUser({
         name: organizerForm.name.trim(),
         email: organizerForm.email.trim(),
         birthDate: new Date(organizerForm.birthDate),
@@ -61,7 +87,7 @@ export default function LoginScreen({ onLoginSuccess }) {
       toast.success('Bem-vindo ao Celebrate! 🎉', { position: 'top-center' });
       onLoginSuccess();
     } catch (error) {
-      toast.error('Erro ao acessar.', { position: 'top-center' });
+      toast.error(error.message || 'Erro ao cadastrar.', { position: 'top-center' });
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +97,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login({
+      await registerUser({
         name: supplierForm.name.trim(),
         email: supplierForm.email.trim(),
         birthDate: new Date(supplierForm.birthDate),
@@ -79,7 +105,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         supplierProfile: {
           companyName: supplierForm.companyName.trim(),
           cnpj: supplierForm.cnpj.trim(),
-          category: supplierForm.category,
+          category: supplierForm.category === 'Outros' ? supplierForm.otherCategory.trim() : supplierForm.category,
           phone: supplierForm.phone.trim(),
           city: supplierForm.city.trim(),
           description: supplierForm.description.trim(),
@@ -99,20 +125,17 @@ export default function LoginScreen({ onLoginSuccess }) {
       
       {/* LEFT PANEL - Elegant Image Showcase */}
       <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="absolute inset-0 bg-black/10 z-10" />
+        <div className="absolute inset-0 bg-black/40 z-10" />
         <img 
           src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1400&auto=format&fit=crop" 
           alt="Elegant Wedding Celebration" 
           className="object-cover w-full h-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/70 z-10" />
         
         <div className="absolute bottom-12 left-12 z-20 text-white space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 glass-panel rounded-2xl flex items-center justify-center">
-              <Gift size={24} strokeWidth={1.5} className="text-white" />
-            </div>
-            <span className="font-black text-3xl tracking-tight">Celebrate!</span>
+            <AnimatedLogo />
           </div>
           <p className="text-white/80 text-lg max-w-md font-medium">
             A plataforma definitiva de alta costura para gerenciar festas inesquecíveis e momentos únicos.
@@ -128,22 +151,83 @@ export default function LoginScreen({ onLoginSuccess }) {
 
         <div className="w-full max-w-sm space-y-8 relative z-10">
           
-          <div className="text-center lg:text-left space-y-2">
-            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto lg:mx-0 mb-4 lg:hidden">
-              <Gift size={24} strokeWidth={1.5} className="text-primary" />
+          <div className="text-center lg:text-left space-y-2 mb-6">
+            <div className="flex justify-center lg:justify-start mx-auto lg:mx-0 mb-4 lg:hidden">
+              <AnimatedLogo />
             </div>
+            
+            {/* Mode Toggle */}
+            <div className="flex bg-muted rounded-xl p-1 mb-6">
+              <button
+                type="button"
+                className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${isLoginMode ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setIsLoginMode(true)}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${!isLoginMode ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setIsLoginMode(false)}
+              >
+                Criar Conta
+              </button>
+            </div>
+
             <h1 className="text-3xl font-black tracking-tight text-foreground">
-              {isSupplierSignup ? 'Seu Negócio' : 'Acesse seu Convite'}
+              {isLoginMode ? 'Acesse seu Painel' : (isSupplierSignup ? 'Seu Negócio' : 'Criar Conta')}
             </h1>
             <p className="text-sm text-muted-foreground font-medium">
-              {isSupplierSignup 
-                ? 'Cadastre-se como fornecedor parceiro.' 
-                : 'Insira seus dados para planejar seu próximo evento.'}
+              {isLoginMode 
+                ? 'Insira seus dados de acesso.' 
+                : (isSupplierSignup ? 'Cadastre-se como fornecedor parceiro.' : 'Insira seus dados para planejar seu próximo evento.')}
             </p>
           </div>
 
           <AnimatePresence mode="wait">
-            {!isSupplierSignup ? (
+            {isLoginMode ? (
+              <motion.div key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                <form onSubmit={handleDirectLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">E-mail</label>
+                    <div className="relative">
+                      <Mail size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="email"
+                        value={loginForm.email}
+                        onChange={e => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                        placeholder="seu@email.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Data de Nascimento (Senha)</label>
+                    <div className="relative">
+                      <Calendar size={18} strokeWidth={1.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="date"
+                        value={loginForm.birthDate}
+                        onChange={e => setLoginForm(prev => ({ ...prev, birthDate: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 pl-12 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 mt-4 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-premium-hover transition-all cursor-pointer"
+                  >
+                    <span>Entrar no Painel</span>
+                    <ArrowRight size={16} strokeWidth={2} />
+                  </button>
+                </form>
+              </motion.div>
+            ) : !isSupplierSignup ? (
               <motion.div key="organizer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                 <form onSubmit={handleOrganizerLogin} className="space-y-4">
                   <div className="space-y-1.5">
@@ -240,16 +324,31 @@ export default function LoginScreen({ onLoginSuccess }) {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Categoria</label>
-                    <select
-                      value={supplierForm.category}
-                      onChange={e => setSupplierForm(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                    <Select value={supplierForm.category} onValueChange={(value) => setSupplierForm(prev => ({ ...prev, category: value }))}>
+                      <SelectTrigger className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-12">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {supplierForm.category === 'Outros' && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Qual categoria?</label>
+                      <input
+                        type="text"
+                        value={supplierForm.otherCategory}
+                        onChange={e => setSupplierForm(prev => ({ ...prev, otherCategory: e.target.value }))}
+                        className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                        placeholder="Especifique a categoria"
+                        required
+                      />
+                    </motion.div>
+                  )}
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Seu Nome</label>

@@ -3,14 +3,14 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: aniversariapp_postgres
+    container_name: Celebrate_postgres
     restart: always
     ports:
       - '5432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: aniversariapp
+      POSTGRES_DB: Celebrate
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

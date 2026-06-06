@@ -14,6 +14,10 @@ import supplierRoutes from './routes/supplierRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import whatsappRoutes from './routes/whatsappRoutes.js';
+import path from 'path';
 
 dotenv.config();
 
@@ -35,6 +39,12 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/chats', chatRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Servir a pasta de uploads publicamente
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Rota de teste
 app.get('/health', (req, res) => {
@@ -51,5 +61,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`🚀 Servidor AniversariApp rodando na porta ${port}`);
+  console.log(`🚀 Servidor Celebrate rodando na porta ${port}`);
 });

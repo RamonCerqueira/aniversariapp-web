@@ -5,6 +5,7 @@ import { useParty } from '../contexts/PartyContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Dialog,
@@ -48,6 +49,7 @@ export default function FinanceScreen({ onBack }) {
     name: '',
     amount: '',
     category: 'Comida',
+    otherCategory: '',
     paid: false,
   });
 
@@ -78,7 +80,7 @@ export default function FinanceScreen({ onBack }) {
   };
 
   const handleOpenForm = () => {
-    setForm({ name: '', amount: '', category: 'Comida', paid: false });
+    setForm({ name: '', amount: '', category: 'Comida', otherCategory: '', paid: false });
     setFormOpen(true);
   };
 
@@ -90,13 +92,17 @@ export default function FinanceScreen({ onBack }) {
     e.preventDefault();
     if (!form.name.trim() || !form.amount || !selectedPartyId) return;
 
+    const finalCategory = form.category === 'Outros' && form.otherCategory.trim() 
+      ? form.otherCategory.trim() 
+      : form.category;
+
     setIsSubmitting(true);
     try {
       const created = await api.expenses.create({
         partyId: selectedPartyId,
         name: form.name.trim(),
         amount: parseFloat(form.amount),
-        category: form.category,
+        category: finalCategory,
         paid: form.paid,
       });
 
@@ -169,42 +175,47 @@ export default function FinanceScreen({ onBack }) {
       <div className="absolute top-[-20%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] rounded-full bg-primary/10 dark:bg-primary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
       <div className="absolute top-[40%] right-[-10%] w-[250px] md:w-[500px] h-[250px] md:h-[500px] rounded-full bg-secondary/10 dark:bg-secondary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
 
-      {/* Header Container with Beautiful Themed Background Image */}
-      <div className="relative z-10 overflow-hidden text-white pt-14 pb-12 px-6 shadow-xl border-b border-zinc-800/80">
-        {/* Background Image with dark blurred overlay for maximum premium feel */}
+      {/* Header Container */}
+      <div className="relative z-10 pt-10 pb-10 px-6 border-b border-border/40 shadow-sm overflow-hidden">
+        {/* Subtle Background Image & Texture */}
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1200&auto=format&fit=crop" 
-            alt="Finance Background" 
-            className="w-full h-full object-cover scale-105 filter blur-[1px]"
+            alt="Background" 
+            className="w-full h-full object-cover opacity-[0.08] mix-blend-multiply dark:mix-blend-lighten dark:opacity-[0.15]"
           />
-          <div className="absolute inset-0 bg-zinc-950/75 bg-gradient-to-r from-zinc-950/90 via-zinc-950/70 to-zinc-950/40" />
-          <div className="absolute inset-0 bg-grid-white/[0.03] bg-[size:16px_16px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/95 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
         </div>
+
+        {/* Subtle Decorative Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none z-0" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-[60px] pointer-events-none z-0" />
+        
         <div className="max-w-6xl mx-auto flex items-center justify-between relative z-10">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="text-white hover:bg-white/10 rounded-full w-10 h-10 border border-white/10 backdrop-blur-sm"
+              className="text-foreground hover:bg-muted rounded-full w-10 h-10 border border-border/50 bg-background/50 backdrop-blur-sm"
             >
               <ArrowLeft size={20} />
             </Button>
           </motion.div>
-          <div className="flex items-center gap-2">
-            <DollarSign size={20} className="text-secondary animate-pulse" />
-            <h1 className="text-sm font-bold uppercase tracking-widest text-white/90">Celebrate!</h1>
+          <div className="flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full">
+            <DollarSign size={16} strokeWidth={2.5} className="text-primary" />
+            <h1 className="text-[10px] font-black uppercase tracking-widest text-primary">Financeiro</h1>
           </div>
           <div className="w-10 h-10" />
         </div>
         
-        <div className="max-w-3xl mx-auto mt-8 text-center z-10 relative">
+        <div className="max-w-3xl mx-auto mt-6 text-center z-10 relative">
           <motion.h2 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight"
+            className="text-3xl sm:text-4xl font-black tracking-tight text-foreground"
           >
             Planejador Financeiro & Custos
           </motion.h2>
@@ -212,7 +223,7 @@ export default function FinanceScreen({ onBack }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-3 text-sm sm:text-base text-white/80 max-w-lg mx-auto"
+            className="mt-3 text-sm font-semibold text-muted-foreground max-w-lg mx-auto"
           >
             Acompanhe seu orçamento em tempo real, gerencie transações e celebre sem surpresas financeiras!
           </motion.p>
@@ -240,18 +251,21 @@ export default function FinanceScreen({ onBack }) {
               {parties.length === 0 ? (
                 <span className="text-xs text-destructive font-semibold">Nenhuma festa cadastrada.</span>
               ) : (
-                <select
-                  className="w-full sm:w-72 border border-border/60 rounded-xl px-4 py-2.5 bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer shadow-inner font-medium"
-                  value={selectedPartyId}
-                  onChange={(e) => setSelectedPartyId(e.target.value)}
-                >
-                  <option value="">Selecione uma festa...</option>
-                  {parties.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (Orc: R$ {p.budget?.toLocaleString('pt-BR') || '0,00'})
-                    </option>
-                  ))}
-                </select>
+                <div className="w-full sm:w-72">
+                  <Select value={selectedPartyId} onValueChange={setSelectedPartyId}>
+                    <SelectTrigger className="w-full border border-border/60 rounded-xl px-4 py-2.5 bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-inner font-medium h-[42px]">
+                      <SelectValue placeholder="Selecione uma festa..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" disabled>Selecione uma festa...</SelectItem>
+                      {parties.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} (Orc: R$ {p.budget?.toLocaleString('pt-BR') || '0,00'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -442,7 +456,7 @@ export default function FinanceScreen({ onBack }) {
             )}
 
             {/* Ações da Lista */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pb-2">
+            <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md pt-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 shadow-[0_10px_20px_-15px_rgba(0,0,0,0.1)] -mx-6 px-6 mt-6 mb-2">
               <div className="space-y-0.5">
                 <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Histórico de Custos</h3>
                 <p className="text-xs text-muted-foreground">Veja e edite os lançamentos financeiros da comemoração</p>
@@ -632,18 +646,36 @@ export default function FinanceScreen({ onBack }) {
 
               <div className="space-y-1.5">
                 <Label htmlFor="expense-cat" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria</Label>
-                <select
-                  id="expense-cat"
-                  className="w-full h-[42px] border rounded-xl px-3 bg-background border-border/80 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium cursor-pointer shadow-sm transition-all"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                <Select value={form.category} onValueChange={(value) => setForm({ ...form, category: value })}>
+                  <SelectTrigger className="w-full h-[42px] border rounded-xl px-3 bg-background border-border/80 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium shadow-sm transition-all">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            {form.category === 'Outros' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-1.5"
+              >
+                <Label htmlFor="other-category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Qual categoria?</Label>
+                <Input
+                  id="other-category"
+                  placeholder="Ex: Transporte, Lembrancinhas"
+                  value={form.otherCategory}
+                  onChange={(e) => setForm({ ...form, otherCategory: e.target.value })}
+                  required
+                  className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
+                />
+              </motion.div>
+            )}
 
             <div className="flex items-center gap-2.5 pt-2">
               <input

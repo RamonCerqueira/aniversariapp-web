@@ -88,39 +88,58 @@ export default function SubscriptionScreen({ onBack }) {
       <div className="absolute top-[-10%] right-[-10%] w-[350px] h-[350px] rounded-full bg-primary/20 dark:bg-primary/10 blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[350px] h-[350px] rounded-full bg-secondary/20 dark:bg-secondary/10 blur-[100px] pointer-events-none" />
 
-      {/* Header Container with Beautiful Themed Background Image */}
-      <div className="relative overflow-hidden text-white pt-14 pb-12 px-6 shadow-xl border-b border-zinc-800/80">
-        {/* Background Image with dark blurred overlay for maximum premium feel */}
+      {/* Header Container */}
+      <div className="relative z-10 pt-10 pb-10 px-6 border-b border-border/40 shadow-sm overflow-hidden">
+        {/* Subtle Background Image & Texture */}
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200&auto=format&fit=crop" 
-            alt="Subscription Background" 
-            className="w-full h-full object-cover scale-105 filter blur-[1px]"
+            alt="Background" 
+            className="w-full h-full object-cover opacity-[0.08] mix-blend-multiply dark:mix-blend-lighten dark:opacity-[0.15]"
           />
-          <div className="absolute inset-0 bg-zinc-950/80 bg-gradient-to-r from-zinc-950/95 via-zinc-950/75 to-zinc-950/50" />
-          <div className="absolute inset-0 bg-grid-white/[0.03] bg-[size:16px_16px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/95 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
         </div>
 
+        {/* Subtle Decorative Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none z-0" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-[60px] pointer-events-none z-0" />
+
         <div className="max-w-6xl mx-auto flex items-center justify-between relative z-10">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="text-white hover:bg-white/20 rounded-full w-10 h-10 border border-white/10 backdrop-blur-sm"
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-xs font-bold uppercase tracking-widest text-white/90">Celebrate!</h1>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="text-foreground hover:bg-muted rounded-full w-10 h-10 border border-border/50 bg-background/50 backdrop-blur-sm"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+          </motion.div>
+          <div className="flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full">
+            <Sparkles size={16} strokeWidth={2.5} className="text-primary" />
+            <h1 className="text-[10px] font-black uppercase tracking-widest text-primary">Assinatura</h1>
+          </div>
           <div className="w-10 h-10" />
         </div>
         
-        <div className="max-w-3xl mx-auto mt-8 text-center z-10 relative space-y-4">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <div className="max-w-3xl mx-auto mt-6 text-center z-10 relative space-y-4">
+          <motion.h2 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl font-black tracking-tight sm:text-4xl text-foreground"
+          >
             Assinaturas Celebrate!
-          </h2>
-          <p className="max-w-xl mx-auto text-xs sm:text-sm text-white/80 leading-relaxed font-semibold">
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-xl mx-auto text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed"
+          >
             De pequenas reuniões familiares a mega eventos de gala. Economize tempo de preparo, aumente limites e otimize cada centavo.
-          </p>
+          </motion.p>
         </div>
       </div>
 

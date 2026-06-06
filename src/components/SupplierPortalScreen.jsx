@@ -6,54 +6,136 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  User, 
-  Phone, 
-  Calendar, 
-  MapPin, 
-  Briefcase, 
-  Mail, 
-  Loader2, 
-  Sparkles, 
-  MessageCircle,
-  Instagram,
-  Settings,
-  ShieldCheck,
-  CheckCircle
+  Building, BookOpen, ImageIcon, Briefcase, MapPin, 
+  Calendar, DollarSign, Star, BarChart3, Upload, Loader2, Sparkles, Plus, Trash2, CheckCircle2,
+  Gift, LogOut, ChevronLeft, ChevronRight, MessageSquare
 } from 'lucide-react';
+import ChatModule from './ChatModule';
+import SupplierLocationTab from './SupplierLocationTab';
+import SupplierPricingTab from './SupplierPricingTab';
+import SupplierReviewsTab from './SupplierReviewsTab';
+import SupplierMetricsTab from './SupplierMetricsTab';
 import { toast } from 'sonner';
 
-export default function SupplierPortalScreen({ onBack }) {
-  const { user, updateUser } = useAuth();
+const TABS = [
+  { id: 'identidade', label: 'Identidade', icon: Building },
+  { id: 'descricao', label: 'Descrição', icon: BookOpen },
+  { id: 'portfolio', label: 'Portfólio', icon: ImageIcon },
+  { id: 'atendimento', label: 'Atendimento', icon: MessageSquare },
+  { id: 'localizacao', label: 'Localização', icon: MapPin },
+  { id: 'disponibilidade', label: 'Agenda', icon: Calendar },
+  { id: 'precos', label: 'Preços', icon: DollarSign },
+  { id: 'avaliacoes', label: 'Avaliações', icon: Star },
+  { id: 'metricas', label: 'Métricas', icon: BarChart3 },
+];
+
+const DIFFERENTIALS_LIST = [
+  'Equipe própria', 'Equipamentos próprios', 'Contrato digital',
+  'Nota fiscal', 'Atendimento 24h', 'Montagem inclusa',
+  'Desmontagem inclusa', 'Seguro de responsabilidade'
+];
+
+export default function SupplierPortalScreen({ onBack, onLogout }) {
+  const { user, updateUser, logout } = useAuth();
   
   const [profile, setProfile] = useState(null);
-  const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('leads');
+  const [activeTab, setActiveTab] = useState('identidade');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [chatRooms, setChatRooms] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Buscar chats para pintar os dias de amarelo (Em negociação)
+  useEffect(() => {
+    if (activeTab === 'disponibilidade') {
+      const loadChats = async () => {
+        try {
+          const rooms = await api.chat.list();
+          setChatRooms(rooms);
+        } catch (error) {
+          console.error('Erro ao buscar chats para a agenda:', error);
+        }
+      };
+      loadChats();
+    }
+  }, [activeTab]);
+
+  const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const firstDay = getFirstDayOfMonth(currentMonth);
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const paddingDays = Array.from({ length: firstDay }, (_, i) => null);
+
+  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+
+  const toggleDate = (day) => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setForm(prev => {
+      const list = prev.blockedDates || [];
+      if (list.includes(dateStr)) return { ...prev, blockedDates: list.filter(d => d !== dateStr) };
+      return { ...prev, blockedDates: [...list, dateStr] };
+    });
+  };
+
+  const getStatusForDate = (day) => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    // Vermelho (Bloqueado Manualmente)
+    if (form.blockedDates?.includes(dateStr)) return 'blocked';
+    
+    // Amarelo (Em negociação via Chat)
+    // Party Date is usually ISO string "2026-06-15T00:00:00.000Z"
+    const hasNegotiation = chatRooms.some(room => {
+      if (!room.party?.date) return false;
+      const pDate = new Date(room.party.date);
+      return pDate.getFullYear() === currentMonth.getFullYear() &&
+             pDate.getMonth() === currentMonth.getMonth() &&
+             pDate.getDate() === day;
+    });
+
+    if (hasNegotiation) return 'negotiating';
+
+    // Verde (Livre)
+    return 'free';
+  };
+
+  // Auto-collapse after 3 minutes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCollapsed(true);
+    }, 180000);
+    return () => clearTimeout(timer);
+  }, [activeTab]);
 
   const [form, setForm] = useState({
     companyName: '',
     cnpj: '',
     category: 'Buffet',
     phone: '',
-    instagram: '',
     city: '',
-    capacityMin: '10',
-    capacityMax: '1000',
     description: '',
+    coverImage: '',
+    logo: '',
+    foundationYear: '',
+    socials: { instagram: '', facebook: '', tiktok: '', website: '', email: '' },
+    differentials: [],
+    portfolio: [],
+    packages: [],
+    locationMap: { radius: '50', cities: [], zipCode: '', address: '', neighborhood: '', city: '', state: '', lat: null, lng: null },
+    pricing: { min: '', max: '' },
+    blockedDates: [],
   });
 
-  const categories = ['Buffet', 'Decoração', 'DJ & Som', 'Bartender', 'Fotografia', 'Brinquedos', 'Espaço / Salão', 'Outros'];
-
   useEffect(() => {
-    fetchProfileAndLeads();
+    fetchProfile();
   }, []);
 
-  const fetchProfileAndLeads = async () => {
+  const fetchProfile = async () => {
     setIsLoading(true);
     try {
       const myProfile = await api.suppliers.getMyProfile();
@@ -65,18 +147,21 @@ export default function SupplierPortalScreen({ onBack }) {
           cnpj: myProfile.cnpj || '',
           category: myProfile.category || 'Buffet',
           phone: myProfile.phone || '',
-          instagram: myProfile.instagram || '',
           city: myProfile.city || '',
-          capacityMin: myProfile.capacityMin?.toString() || '10',
-          capacityMax: myProfile.capacityMax?.toString() || '1000',
           description: myProfile.description || '',
+          coverImage: myProfile.images?.[0] || '',
+          
+          // Novos campos salvos no backend como JSON
+          logo: myProfile.logo || '',
+          foundationYear: myProfile.foundationYear || '',
+          socials: myProfile.socials || { instagram: '', facebook: '', tiktok: '', website: '', email: '' },
+          differentials: myProfile.differentials || [],
+          portfolio: myProfile.portfolio || [],
+          packages: myProfile.packages || [],
+          locationMap: myProfile.locationMap || { radius: '50', cities: [], zipCode: '', address: '', neighborhood: '', city: '', state: '', lat: null, lng: null },
+          pricing: myProfile.pricing || { min: '', max: '' },
+          blockedDates: myProfile.blockedDates || [],
         });
-
-        // Se o perfil existe, busca os leads recebidos
-        const myLeads = await api.leads.getSupplierLeads();
-        setLeads(myLeads);
-      } else {
-        setActiveTab('register');
       }
     } catch (error) {
       console.error('Erro ao buscar dados do fornecedor:', error);
@@ -86,10 +171,37 @@ export default function SupplierPortalScreen({ onBack }) {
     }
   };
 
+  const handleFileUpload = async (e, field, index = null) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      toast.loading('Fazendo upload da imagem...', { id: 'upload' });
+      const res = await api.upload.file(file);
+      const url = res.url;
+      
+      if (field === 'coverImage') {
+        setForm({ ...form, coverImage: url });
+      } else if (field === 'logo') {
+        setForm({ ...form, logo: url });
+      } else if (field === 'portfolio') {
+        setForm({ ...form, portfolio: [...form.portfolio, url] });
+      } else if (field === 'packageImage' && index !== null) {
+        const newPackages = [...form.packages];
+        newPackages[index].image = url;
+        setForm({ ...form, packages: newPackages });
+      }
+      
+      toast.success('Upload concluído!', { id: 'upload' });
+    } catch (err) {
+      toast.error('Falha no upload do arquivo.', { id: 'upload' });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.companyName || !form.phone || !form.city || !form.description) {
-      toast.warning('Por favor, preencha todos os campos obrigatórios!', { position: 'top-center' });
+    if (!form.companyName || !form.phone) {
+      toast.warning('Por favor, preencha nome e telefone!', { position: 'top-center' });
       return;
     }
 
@@ -100,553 +212,419 @@ export default function SupplierPortalScreen({ onBack }) {
         cnpj: form.cnpj.trim(),
         category: form.category,
         phone: form.phone.trim(),
-        instagram: form.instagram.trim(),
         city: form.city.trim(),
-        capacityMin: parseInt(form.capacityMin) || 0,
-        capacityMax: parseInt(form.capacityMax) || 10000,
         description: form.description.trim(),
-        images: ['https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=300'] // mock de imagem de portfólio
+        images: form.coverImage ? [form.coverImage] : [],
+        
+        logo: form.logo,
+        foundationYear: parseInt(form.foundationYear) || null,
+        socials: form.socials,
+        differentials: form.differentials,
+        portfolio: form.portfolio,
+        packages: form.packages,
+        locationMap: form.locationMap,
+        pricing: form.pricing,
+        blockedDates: form.blockedDates,
       });
 
       setProfile(savedProfile);
-      
-      // Atualiza o estado do usuário logado (role virou SUPPLIER e plano SUPPLIER_MONTHLY)
       updateUser({ role: 'SUPPLIER', plan: 'SUPPLIER_MONTHLY' });
-      
-      toast.success(
-        profile 
-          ? 'Perfil atualizado com sucesso! 💼' 
-          : 'Perfil de parceiro ativado com sucesso! 🎉', 
-        { position: 'top-center' }
-      );
-      
-      // Busca leads novos
-      const myLeads = await api.leads.getSupplierLeads();
-      setLeads(myLeads);
-      setActiveTab('leads');
+      toast.success('Perfil atualizado com sucesso! 💼', { position: 'top-center' });
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
-      toast.error('Ocorreu um erro ao salvar o perfil de fornecedor.', { position: 'top-center' });
+      toast.error('Ocorreu um erro ao salvar o perfil.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleUpdateLeadStatus = async (leadId, newStatus) => {
-    try {
-      await api.leads.updateStatus(leadId, newStatus);
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
-      toast.success(
-        newStatus === 'closed' 
-          ? 'Parabéns! Contrato fechado! 🎉' 
-          : 'Status de contato atualizado! 👍', 
-        { position: 'top-center' }
-      );
-    } catch (error) {
-      console.error('Erro ao atualizar status do lead:', error);
-      toast.error('Erro ao atualizar o status da solicitação.');
-    }
+  const toggleDifferential = (diff) => {
+    setForm(prev => {
+      const list = prev.differentials;
+      if (list.includes(diff)) return { ...prev, differentials: list.filter(d => d !== diff) };
+      return { ...prev, differentials: [...list, diff] };
+    });
+  };
+
+  const handleAddPackage = () => {
+    setForm({
+      ...form,
+      packages: [...form.packages, { id: Date.now().toString(), name: '', price: '', description: '', image: '', type: 'Bronze' }]
+    });
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
-        <div className="text-center relative z-10 space-y-4">
-          <Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />
-          <p className="text-sm font-semibold text-muted-foreground tracking-wide">Carregando painel do parceiro...</p>
-        </div>
-      </div>
-    );
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16 transition-colors duration-300 relative overflow-hidden">
-      {/* Decorative Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] rounded-full bg-primary/10 dark:bg-primary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
-      <div className="absolute bottom-[20%] right-[-10%] w-[250px] md:w-[500px] h-[250px] md:h-[500px] rounded-full bg-secondary/10 dark:bg-secondary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
-
-      {/* Header Container with Beautiful Themed Background Image */}
-      <div className="relative z-10 overflow-hidden text-white pt-14 pb-12 px-6 shadow-xl border-b border-zinc-800/80">
-        {/* Background Image with dark blurred overlay for maximum premium feel */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1469371670807-013ccf25f16a?q=80&w=1200&auto=format&fit=crop" 
-            alt="Event Setup Background" 
-            className="w-full h-full object-cover scale-105 filter blur-[1px]"
-          />
-          <div className="absolute inset-0 bg-zinc-950/75 bg-gradient-to-r from-zinc-950/90 via-zinc-950/70 to-zinc-950/40" />
-          <div className="absolute inset-0 bg-grid-white/[0.03] bg-[size:16px_16px]" />
-        </div>
-        <div className="max-w-6xl mx-auto flex items-center justify-between relative z-10">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onBack}
-              className="text-white hover:bg-white/10 rounded-full w-10 h-10 border border-white/10 backdrop-blur-sm"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          </motion.div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={20} className="text-secondary animate-pulse" />
-            <h1 className="text-sm font-bold uppercase tracking-widest text-white/90">Celebrate!</h1>
-          </div>
-          <div className="w-10 h-10" />
-        </div>
-        
-        <div className="max-w-3xl mx-auto mt-8 text-center z-10 relative">
-          <motion.h2 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight"
-          >
-            {profile ? profile.companyName : 'Portal do Parceiro'}
-          </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-3 text-sm sm:text-base text-white/80 max-w-lg mx-auto"
-          >
-            {profile 
-              ? `${profile.category} • Destaque credenciado em ${profile.city}` 
-              : 'Ofereça buffet, decoração, brinquedos e fotografia direto para quem está planejando aniversários!'}
-          </motion.p>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-6 mt-8 relative z-10">
-        {profile ? (
-          // Visualização do Fornecedor Ativo (Abas de Leads e Edição)
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-2 max-w-md mx-auto bg-muted/80 backdrop-blur border border-border/50 p-1.5 rounded-2xl">
-              <TabsTrigger 
-                value="leads"
-                className="rounded-xl px-4 py-2.5 font-bold text-xs uppercase tracking-wider transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md cursor-pointer"
-              >
-                Oportunidades ({leads.length})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="edit"
-                className="rounded-xl px-4 py-2.5 font-bold text-xs uppercase tracking-wider transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md cursor-pointer"
-              >
-                Editar Perfil
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Aba de Leads */}
-            <TabsContent value="leads" className="space-y-4">
-              <div className="pb-1">
-                <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Solicitações Recebidas</h3>
-                <p className="text-xs text-muted-foreground">Novos leads interessados em contratar seus serviços no Celebrate!</p>
+    <div className="flex h-screen bg-muted/30 overflow-hidden font-sans">
+      {/* Unified V2 Sidebar */}
+      <aside 
+        className={`${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 ease-in-out bg-card border-r border-border flex flex-col justify-between shrink-0 h-screen sticky top-0 select-none z-30 shadow-xl`}
+      >
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Brand Header */}
+          <div className="p-5 border-b border-border/50 flex items-center justify-between">
+            <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
+              <div className="w-10 h-10 shrink-0 bg-gradient-to-tr from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <Gift size={20} className="text-white" />
               </div>
-              
-              {leads.length === 0 ? (
-                <Card className="border-dashed border-2 border-border/60 p-12 text-center bg-card/30 rounded-3xl shadow-inner max-w-md mx-auto">
-                  <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 border border-border/30 text-muted-foreground/50">
-                    <Briefcase size={24} />
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground/80 mb-1">Nenhum orçamento recebido</h4>
-                  <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                    Seu perfil profissional está ativo e visível na busca de fornecedores! Avisaremos assim que receber novas cotações.
-                  </p>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {leads.map(lead => {
-                    const party = lead.party;
-                    const eventDate = party?.date ? new Date(party.date) : null;
-                    const leadWhatsAppUrl = `https://api.whatsapp.com/send?phone=${lead.party?.user?.phone || '55'}&text=${encodeURIComponent(
-                      `Olá! Recebi sua solicitação de orçamento pelo Celebrate! para o evento "${party?.name}". Vamos fechar os detalhes?`
-                    )}`;
-
-                    return (
-                      <motion.div
-                        key={lead.id}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ y: -1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Card className={`shadow-md border border-border/50 bg-card/90 backdrop-blur-sm rounded-2xl overflow-hidden relative ${
-                          lead.status === 'closed' ? 'bg-emerald-500/[0.01]' : ''
-                        }`}>
-                          <div className={`absolute top-0 left-0 w-1.5 h-full ${
-                            lead.status === 'closed' 
-                              ? 'bg-emerald-500' 
-                              : lead.status === 'contacted' 
-                              ? 'bg-indigo-500' 
-                              : 'bg-amber-500'
-                          }`} />
-                          
-                          <CardContent className="p-5 sm:p-6">
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                              <div className="space-y-3 flex-1">
-                                <span className={`inline-flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                                  lead.status === 'closed' 
-                                    ? 'bg-emerald-500/10 text-emerald-600' 
-                                    : lead.status === 'contacted' 
-                                    ? 'bg-indigo-500/10 text-indigo-600' 
-                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                                }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${
-                                    lead.status === 'closed' ? 'bg-emerald-500 animate-pulse' :
-                                    lead.status === 'contacted' ? 'bg-indigo-500' : 'bg-amber-500'
-                                  }`} />
-                                  {lead.status === 'closed' ? 'Contrato Fechado' : lead.status === 'contacted' ? 'Contato Feito' : 'Pendente'}
-                                </span>
-                                
-                                <h4 className="text-lg font-extrabold text-foreground leading-tight">
-                                  {party?.name || 'Festa de Aniversário'}
-                                </h4>
-                                
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-1 border-t border-border/30 text-xs sm:text-sm text-muted-foreground">
-                                  <div className="flex items-center">
-                                    <User size={15} className="mr-2 text-primary" />
-                                    <span>Cliente: <strong className="text-foreground">{party?.user?.name || 'Usuário'}</strong></span>
-                                  </div>
-                                  {eventDate && (
-                                    <div className="flex items-center">
-                                      <Calendar size={15} className="mr-2 text-secondary" />
-                                      <span>Data: <strong className="text-foreground">{eventDate.toLocaleDateString('pt-BR')}</strong></span>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center">
-                                    <MapPin size={15} className="mr-2 text-amber-500" />
-                                    <span>Local: {party?.location}</span>
-                                  </div>
-                                  <div className="flex items-center">
-                                    <MessageCircle size={15} className="mr-2 text-indigo-500" />
-                                    <span>Tamanho: {party?.guestCount || 0} convidados</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-row md:flex-col gap-2.5 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-border/40">
-                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1 w-full">
-                                  <Button asChild className="w-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center gap-1.5 py-5.5 text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer">
-                                    <a href={leadWhatsAppUrl} target="_blank" rel="noreferrer" onClick={() => handleUpdateLeadStatus(lead.id, 'contacted')}>
-                                      <Phone size={15} /> Contatar WhatsApp
-                                    </a>
-                                  </Button>
-                                </motion.div>
-                                
-                                {lead.status !== 'closed' && (
-                                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1 w-full">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleUpdateLeadStatus(lead.id, 'closed')}
-                                      className="w-full text-xs font-bold py-5.5 rounded-xl border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
-                                    >
-                                      <CheckCircle size={13} /> Fechar Contrato
-                                    </Button>
-                                  </motion.div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
+              {!isCollapsed && (
+                <div className="flex flex-col overflow-hidden">
+                  <span className="font-black text-xl tracking-tight leading-none text-foreground">CELEBRATE</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1 truncate">Party Planner</span>
                 </div>
               )}
-            </TabsContent>
+            </div>
+          </div>
 
-            {/* Aba de Edição do Perfil */}
-            <TabsContent value="edit">
-              <Card className="shadow-lg border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
-                    <Settings size={20} className="text-primary" /> Configurações do Portfólio
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Atualize seus dados profissionais para manter atração máxima.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="companyName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome do Negócio / Razão Social *</Label>
-                        <Input
-                          id="companyName"
-                          placeholder="Ex: Buffet Estrela Guia Ltda"
-                          value={form.companyName}
-                          onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                          required
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <Label htmlFor="cnpj" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">CNPJ (opcional)</Label>
-                        <Input
-                          id="cnpj"
-                          placeholder="Ex: 00.000.000/0001-00"
-                          value={form.cnpj}
-                          onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria do Serviço *</Label>
-                        <select
-                          id="category"
-                          className="w-full h-[42px] border rounded-xl px-3 bg-background border-border/80 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium cursor-pointer transition-all shadow-sm"
-                          value={form.category}
-                          onChange={(e) => setForm({ ...form, category: e.target.value })}
-                        >
-                          {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Celular WhatsApp *</Label>
-                        <Input
-                          id="phone"
-                          placeholder="Ex: 11999999999"
-                          value={form.phone}
-                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          required
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
+          {/* User Profile Info */}
+          {!isCollapsed && (
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-accent border border-border">
+                <div className="relative w-9 h-9 shrink-0 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px] shadow-sm">
+                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center text-primary text-[10px] font-black">
+                    {user?.name?.substring(0, 2).toUpperCase() || 'SP'}
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-card" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-extrabold text-xs truncate uppercase text-foreground">{user?.name || 'Fornecedor'}</span>
+                  <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Premium Host</span>
+                </div>
+              </div>
+            </div>
+          )}
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="instagram" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instagram (opcional)</Label>
-                        <div className="relative">
-                          <Instagram size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                          <Input
-                            id="instagram"
-                            placeholder="Ex: @buffet_estrela"
-                            value={form.instagram}
-                            onChange={(e) => setForm({ ...form, instagram: e.target.value })}
-                            className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5 pl-10"
-                          />
+          {/* Navigation */}
+          <nav className="flex-1 px-3 py-1 space-y-1 overflow-hidden">
+            {!isCollapsed && (
+               <div className="px-3 pb-1.5 pt-0.5 flex items-center gap-2 text-muted-foreground">
+                 <Building size={12} />
+                 <span className="text-[9px] font-bold uppercase tracking-widest">Meu Negócio</span>
+               </div>
+            )}
+            
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  title={isCollapsed ? tab.label : ''}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-start px-4 gap-3'} py-2.5 rounded-xl transition-all cursor-pointer ${isActive ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+                >
+                  <Icon size={16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+                  {!isCollapsed && <span className="text-[11px] font-bold tracking-wider uppercase whitespace-nowrap">{tab.label}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Footer Actions */}
+          <div className="p-3 border-t border-border flex flex-col gap-1.5">
+            <button 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={`w-full flex items-center justify-center py-2 rounded-xl text-muted-foreground hover:bg-muted border border-transparent transition-colors cursor-pointer`}
+              title={isCollapsed ? "Expandir" : "Colapsar"}
+            >
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
+            <button 
+              onClick={() => {
+                if (onLogout) onLogout();
+                else if (logout) logout();
+                else if (onBack) onBack();
+                else window.location.reload();
+              }}
+              title={isCollapsed ? "Sair" : ""}
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-center gap-2'} py-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-border transition-colors cursor-pointer`}
+            >
+              <LogOut size={14} strokeWidth={1.5} className="shrink-0" />
+              {!isCollapsed && <span className="text-[11px] font-black uppercase tracking-wider whitespace-nowrap">Sair</span>}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-y-auto relative">
+        {/* Header */}
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 px-8 py-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-foreground">{TABS.find(t => t.id === activeTab)?.label}</h1>
+            <p className="text-sm text-muted-foreground font-medium">Configure as informações que os clientes verão no seu perfil.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {activeTab !== 'atendimento' && (
+              <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-wider text-xs px-6 shadow-xl shadow-primary/20">
+                {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Salvar Alterações
+              </Button>
+            )}
+          </div>
+        </header>
+
+        <div className="p-8 max-w-4xl mx-auto w-full">
+          {activeTab === 'identidade' && (
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-8">
+              {/* Cover & Logo Uploads */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                  <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Foto de Capa Real</CardTitle></CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center gap-4">
+                      {form.coverImage ? (
+                        <div className="w-full h-32 rounded-2xl overflow-hidden relative group">
+                          <img src={form.coverImage} className="w-full h-full object-cover" alt="Capa" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <label className="cursor-pointer text-white font-bold text-xs uppercase bg-black/50 px-4 py-2 rounded-lg backdrop-blur-md border border-white/20">
+                              Trocar Capa <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'coverImage')} />
+                            </label>
+                          </div>
                         </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="city" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cidade Principal *</Label>
-                        <Input
-                          id="city"
-                          placeholder="Ex: São Paulo"
-                          value={form.city}
-                          onChange={(e) => setForm({ ...form, city: e.target.value })}
-                          required
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="capacityMin" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Capac. Mín</Label>
-                          <Input
-                            id="capacityMin"
-                            type="number"
-                            placeholder="10"
-                            value={form.capacityMin}
-                            onChange={(e) => setForm({ ...form, capacityMin: e.target.value })}
-                            className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="capacityMax" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Capac. Máx</Label>
-                          <Input
-                            id="capacityMax"
-                            type="number"
-                            placeholder="1000"
-                            value={form.capacityMax}
-                            onChange={(e) => setForm({ ...form, capacityMax: e.target.value })}
-                            className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                          />
-                        </div>
-                      </div>
+                      ) : (
+                        <label className="w-full h-32 border-2 border-dashed border-primary/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors text-primary">
+                          <Upload size={24} className="mb-2" />
+                          <span className="text-xs font-bold uppercase tracking-widest">Fazer Upload da Capa</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'coverImage')} />
+                        </label>
+                      )}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição do Serviço *</Label>
-                      <textarea
-                        id="description"
-                        rows={4}
-                        className="w-full border rounded-xl p-3 bg-background border-border/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium shadow-sm transition-all"
-                        placeholder="Descreva o que seu serviço oferece, diferenciais, etc."
-                        value={form.description}
-                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                        required
-                      />
+                <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                  <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Logotipo</CardTitle></CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center gap-4">
+                      {form.logo ? (
+                        <div className="w-24 h-24 rounded-full overflow-hidden relative group border-2 border-border">
+                          <img src={form.logo} className="w-full h-full object-cover" alt="Logo" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <label className="cursor-pointer text-white">
+                              <Upload size={16} /> <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="w-24 h-24 rounded-full border-2 border-dashed border-primary/30 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors text-primary">
+                          <Upload size={20} />
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+                        </label>
+                      )}
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-                    <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
-                      <Button type="submit" disabled={isSubmitting} className="w-full py-6 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs uppercase tracking-wider shadow-md shadow-primary/10">
-                        {isSubmitting ? (
-                          <span className="flex items-center gap-1.5">
-                            <Loader2 className="animate-spin h-3.5 w-3.5" />
-                            Salvando...
-                          </span>
-                        ) : 'Salvar Alterações'}
-                      </Button>
-                    </motion.div>
-                  </form>
+              {/* Basic Info */}
+              <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Dados Básicos</CardTitle></CardHeader>
+                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nome Fantasia *</Label>
+                    <Input value={form.companyName} onChange={e => setForm({...form, companyName: e.target.value})} className="h-12 rounded-xl bg-muted/30" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">WhatsApp *</Label>
+                    <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="h-12 rounded-xl bg-muted/30" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">CNPJ</Label>
+                    <Input value={form.cnpj} onChange={e => setForm({...form, cnpj: e.target.value})} className="h-12 rounded-xl bg-muted/30" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ano de Fundação</Label>
+                    <Input type="number" value={form.foundationYear} onChange={e => setForm({...form, foundationYear: e.target.value})} className="h-12 rounded-xl bg-muted/30" />
+                  </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
-        ) : (
-          // Formulário de Cadastro do Fornecedor (Caso não possua perfil ativo)
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Card className="max-w-2xl mx-auto shadow-xl border border-border/50 bg-card/85 backdrop-blur-md rounded-3xl overflow-hidden">
-              <div className="h-1.5 bg-gradient-to-r from-primary to-secondary" />
-              <CardHeader className="text-center pb-6">
-                <CardTitle className="text-xl sm:text-2xl font-black flex items-center justify-center gap-1.5 text-primary">
-                  <Sparkles size={24} className="text-secondary animate-bounce-slow" /> Ative seu Negócio
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm pt-1">
-                  Divulgue seus serviços de buffet, brinquedos, bar ou fotografia direto para organizadores ativos no Celebrate!.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="companyName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome do Negócio / Razão Social *</Label>
-                      <Input
-                        id="companyName"
-                        placeholder="Ex: Buffet Estrela Guia Ltda"
-                        value={form.companyName}
-                        onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                        required
-                        className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                      />
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <Label htmlFor="cnpj" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">CNPJ (opcional)</Label>
-                      <Input
-                        id="cnpj"
-                        placeholder="Ex: 00.000.000/0001-00"
-                        value={form.cnpj}
-                        onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
-                        className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                      />
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria do Serviço *</Label>
-                      <select
-                        id="category"
-                        className="w-full h-[42px] border rounded-xl px-3 bg-background border-border/80 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium cursor-pointer transition-all"
-                        value={form.category}
-                        onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      >
-                        {categories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Telefone WhatsApp *</Label>
-                      <Input
-                        id="phone"
-                        placeholder="Ex: 11999999999"
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        required
-                        className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="instagram" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instagram (opcional)</Label>
-                      <div className="relative">
-                        <Instagram size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                        <Input
-                          id="instagram"
-                          placeholder="Ex: @buffet_estrela"
-                          value={form.instagram}
-                          onChange={(e) => setForm({ ...form, instagram: e.target.value })}
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5 pl-10"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="city" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cidade Principal *</Label>
-                      <Input
-                        id="city"
-                        placeholder="Ex: São Paulo"
-                        value={form.city}
-                        onChange={(e) => setForm({ ...form, city: e.target.value })}
-                        required
-                        className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="capacityMin" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Capac. Mín</Label>
-                        <Input
-                          id="capacityMin"
-                          type="number"
-                          placeholder="10"
-                          value={form.capacityMin}
-                          onChange={(e) => setForm({ ...form, capacityMin: e.target.value })}
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="capacityMax" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Capac. Máx</Label>
-                        <Input
-                          id="capacityMax"
-                          type="number"
-                          placeholder="1000"
-                          value={form.capacityMax}
-                          onChange={(e) => setForm({ ...form, capacityMax: e.target.value })}
-                          className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-5"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição do Serviço *</Label>
-                    <textarea
-                      id="description"
-                      rows={4}
-                      className="w-full border rounded-xl p-3 bg-background border-border/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium shadow-sm transition-all"
-                      placeholder="Descreva o que seu serviço oferece, especialidades, etc."
-                      value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
-                    <Button type="submit" disabled={isSubmitting} className="w-full py-6 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-md shadow-primary/10 cursor-pointer">
-                      {isSubmitting ? (
-                        <span className="flex items-center gap-1.5">
-                          <Loader2 className="animate-spin h-3.5 w-3.5" />
-                          Ativando...
+              {/* Differentials */}
+              <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Diferenciais da Empresa</CardTitle></CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {DIFFERENTIALS_LIST.map(diff => (
+                      <label key={diff} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${form.differentials.includes(diff) ? 'border-primary bg-primary/5 text-primary' : 'border-border/50 hover:bg-muted/50 text-muted-foreground'}`}>
+                        <input type="checkbox" className="hidden" checked={form.differentials.includes(diff)} onChange={() => toggleDifferential(diff)} />
+                        <span className="w-4 h-4 rounded border flex items-center justify-center shrink-0">
+                          {form.differentials.includes(diff) && <CheckCircle2 size={12} />}
                         </span>
-                      ) : 'Ativar Meu Negócio no App'}
-                    </Button>
-                  </motion.div>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </div>
+                        <span className="text-xs font-bold leading-tight">{diff}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeTab === 'descricao' && (
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-6">
+              <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Storytelling (Descrição Premium)</CardTitle></CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <p className="text-sm text-muted-foreground font-medium">Escreva uma descrição rica que cative o cliente. Conte a história da sua empresa, sua missão e por que o seu serviço é inesquecível.</p>
+                  <textarea
+                    rows={12}
+                    className="w-full border rounded-2xl p-5 bg-muted/10 border-border/80 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium shadow-inner transition-all resize-y"
+                    placeholder="Há mais de 15 anos transformamos sonhos em experiências inesquecíveis..."
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeTab === 'portfolio' && (
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-6">
+              <Card className="bg-card border-border/50 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-muted/20 pb-4 flex flex-row items-center justify-between">
+                  <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Galeria de Fotos do Portfólio</CardTitle>
+                  <label className="cursor-pointer bg-primary/10 text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2">
+                    <Upload size={14} /> Adicionar Foto
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'portfolio')} />
+                  </label>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {form.portfolio.length === 0 ? (
+                    <div className="text-center py-16 border-2 border-dashed border-border/60 rounded-2xl bg-muted/20">
+                      <ImageIcon size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+                      <p className="text-sm font-bold text-foreground">Sua galeria está vazia</p>
+                      <p className="text-xs text-muted-foreground mt-1">Faça upload das suas melhores fotos de eventos.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {form.portfolio.map((imgUrl, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-border/50">
+                          <img src={imgUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          <button 
+                            type="button"
+                            onClick={() => setForm({...form, portfolio: form.portfolio.filter((_, i) => i !== idx)})}
+                            className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeTab === 'atendimento' && (
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-6">
+              <ChatModule userRole="SUPPLIER" />
+            </motion.div>
+          )}
+
+          {activeTab === 'disponibilidade' && (
+            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Calendário */}
+                <div className="md:col-span-2">
+                  <Card className="border-border/50 shadow-xl bg-card rounded-3xl overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-black text-foreground capitalize">
+                          {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                        </h2>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="icon" onClick={prevMonth} className="rounded-full w-8 h-8"><ChevronLeft size={16}/></Button>
+                          <Button variant="outline" size="icon" onClick={nextMonth} className="rounded-full w-8 h-8"><ChevronRight size={16}/></Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-2 mb-2">
+                        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
+                          <div key={d} className="text-center text-[10px] font-black uppercase text-muted-foreground">{d}</div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-2">
+                        {paddingDays.map((_, i) => <div key={`empty-${i}`} className="h-12" />)}
+                        {daysArray.map(day => {
+                          const status = getStatusForDate(day);
+                          let bgClass = "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20"; // free
+                          if (status === 'blocked') bgClass = "bg-rose-500 text-white shadow-md hover:bg-rose-600"; // blocked
+                          if (status === 'negotiating') bgClass = "bg-amber-400 text-amber-950 shadow-md hover:bg-amber-500"; // negotiating
+
+                          return (
+                            <button
+                              key={day}
+                              onClick={() => toggleDate(day)}
+                              className={`h-12 rounded-xl flex items-center justify-center text-sm font-bold border transition-all cursor-pointer ${bgClass}`}
+                            >
+                              {day}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Legenda e Instruções */}
+                <div className="space-y-4">
+                  <Card className="border-border/50 shadow-md bg-card rounded-3xl">
+                    <CardContent className="p-5 space-y-4">
+                      <h3 className="font-black text-sm uppercase tracking-wider text-foreground border-b border-border/50 pb-2">Legenda</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 text-[10px] font-bold">L</div>
+                          <span className="text-sm font-medium text-muted-foreground">Livre (Disponível)</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-md bg-amber-400 border border-amber-500 flex items-center justify-center text-amber-950 text-[10px] font-bold">N</div>
+                          <span className="text-sm font-medium text-muted-foreground">Em Negociação (Automático)</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-md bg-rose-500 border border-rose-600 flex items-center justify-center text-white text-[10px] font-bold">B</div>
+                          <span className="text-sm font-medium text-muted-foreground">Bloqueado (Fechado)</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-primary/5 border-primary/20 rounded-3xl">
+                    <CardContent className="p-5">
+                      <p className="text-xs text-primary font-medium leading-relaxed">
+                        <b>Dica de Sucesso:</b> Cancele ou bloqueie as datas em que você já assinou contrato fora da plataforma. Se um cliente tem um Chat aberto com você para um dia livre, ele aparecerá em <span className="text-amber-600 font-bold">Amarelo</span> para alertá-lo.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'localizacao' && (
+            <SupplierLocationTab form={form} setForm={setForm} />
+          )}
+
+          {activeTab === 'precos' && (
+            <SupplierPricingTab form={form} setForm={setForm} />
+          )}
+
+          {activeTab === 'avaliacoes' && (
+            <SupplierReviewsTab profile={profile} />
+          )}
+
+          {activeTab === 'metricas' && (
+            <SupplierMetricsTab profile={profile} />
+          )}
+
+        </div>
+      </main>
     </div>
   );
 }

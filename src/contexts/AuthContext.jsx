@@ -3,6 +3,14 @@ import { api } from '../services/api';
 
 const AuthContext = createContext();
 
+const formatUser = (userData) => {
+  if (!userData) return userData;
+  return {
+    ...userData,
+    name: userData.name ? userData.name.toUpperCase() : userData.name
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,13 +21,13 @@ export const AuthProvider = ({ children }) => {
 
   const loadStoredUser = async () => {
     try {
-      const storedUser = localStorage.getItem('aniversariapp_user');
-      const token = localStorage.getItem('aniversariapp_token');
+      const storedUser = localStorage.getItem('Celebrate_user');
+      const token = localStorage.getItem('Celebrate_token');
       if (storedUser && token) {
-        setUser(JSON.parse(storedUser));
+        setUser(formatUser(JSON.parse(storedUser)));
       } else {
-        localStorage.removeItem('aniversariapp_user');
-        localStorage.removeItem('aniversariapp_token');
+        localStorage.removeItem('Celebrate_user');
+        localStorage.removeItem('Celebrate_token');
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
@@ -28,44 +36,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (userData) => {
+  const loginUser = async (email, birthDate) => {
     try {
-      // Cria uma senha determinística baseada na data de nascimento para manter o formulário transparente
-      const deterministicPassword = `p@ss_${new Date(userData.birthDate).getTime()}`;
-      
-      let res;
-      try {
-        // Tenta registrar o usuário primeiro
-        res = await api.auth.register(
-          userData.name,
-          userData.email,
-          deterministicPassword,
-          userData.birthDate,
-          userData.role,
-          userData.supplierProfile
-        );
-      } catch (err) {
-        // Se o e-mail já existir, tenta fazer o login
-        if (err.message.includes('já está cadastrado') || err.message.includes('Email already exists') || err.message.includes('Erro ao cadastrar')) {
-          res = await api.auth.login(userData.email, deterministicPassword);
-        } else {
-          throw err;
-        }
-      }
+      const deterministicPassword = `p@ss_${new Date(birthDate).getTime()}`;
+      const res = await api.auth.login(email, deterministicPassword);
 
-      localStorage.setItem('aniversariapp_token', res.token);
-      localStorage.setItem('aniversariapp_user', JSON.stringify(res.user));
-      setUser(res.user);
+      const formattedUser = formatUser(res.user);
+      localStorage.setItem('Celebrate_token', res.token);
+      localStorage.setItem('Celebrate_user', JSON.stringify(formattedUser));
+      setUser(formattedUser);
+      return formattedUser;
     } catch (error) {
-      console.error('Erro ao fazer login/registro na API:', error);
+      console.error('Erro ao fazer login na API:', error);
+      throw error;
+    }
+  };
+
+  const registerUser = async (userData) => {
+    try {
+      const deterministicPassword = `p@ss_${new Date(userData.birthDate).getTime()}`;
+
+      const res = await api.auth.register(
+        userData.name,
+        userData.email,
+        deterministicPassword,
+        userData.birthDate,
+        userData.role,
+        userData.supplierProfile
+      );
+
+      const formattedUser = formatUser(res.user);
+      localStorage.setItem('Celebrate_token', res.token);
+      localStorage.setItem('Celebrate_user', JSON.stringify(formattedUser));
+      setUser(formattedUser);
+      return formattedUser;
+    } catch (error) {
+      console.error('Erro ao registrar na API:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      localStorage.removeItem('aniversariapp_user');
-      localStorage.removeItem('aniversariapp_token');
+      localStorage.removeItem('Celebrate_user');
+      localStorage.removeItem('Celebrate_token');
       setUser(null);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
@@ -75,10 +89,10 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = async (userData) => {
     if (!user) return;
-    
+
     try {
-      const updatedUser = { ...user, ...userData };
-      localStorage.setItem('aniversariapp_user', JSON.stringify(updatedUser));
+      const updatedUser = formatUser({ ...user, ...userData });
+      localStorage.setItem('Celebrate_user', JSON.stringify(updatedUser));
       setUser(updatedUser);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
@@ -89,8 +103,9 @@ export const AuthProvider = ({ children }) => {
   const subscribeToPlan = async (plan) => {
     try {
       const res = await api.auth.subscribe(plan);
-      localStorage.setItem('aniversariapp_user', JSON.stringify(res.user));
-      setUser(res.user);
+      const formattedUser = formatUser(res.user);
+      localStorage.setItem('Celebrate_user', JSON.stringify(formattedUser));
+      setUser(formattedUser);
       return res;
     } catch (error) {
       console.error('Erro ao assinar plano:', error);
@@ -102,7 +117,8 @@ export const AuthProvider = ({ children }) => {
     user,
     isLoading,
     isAuthenticated: !!user,
-    login,
+    loginUser,
+    registerUser,
     logout,
     updateUser,
     subscribeToPlan,

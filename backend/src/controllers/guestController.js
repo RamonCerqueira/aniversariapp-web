@@ -51,7 +51,7 @@ export const getGuestPublic = async (req, res) => {
 
 // Criar novo convidado
 export const createGuest = async (req, res) => {
-  const { partyId, name, phone, companions, status } = req.body;
+  const { partyId, name, phone, companions, status, whatsappInvite } = req.body;
 
   try {
     if (!partyId || !name || !phone) {
@@ -74,6 +74,7 @@ export const createGuest = async (req, res) => {
         phone,
         companions: parseInt(companions) || 0,
         status: status || 'pending',
+        whatsappInvite: !!whatsappInvite,
       }
     });
 
@@ -87,7 +88,7 @@ export const createGuest = async (req, res) => {
 // Atualizar convidado (Administrativo)
 export const updateGuest = async (req, res) => {
   const { id } = req.params;
-  const { name, phone, companions, status } = req.body;
+  const { name, phone, companions, status, whatsappInvite } = req.body;
 
   try {
     // Verifica propriedade do convidado através da festa
@@ -106,6 +107,7 @@ export const updateGuest = async (req, res) => {
         phone,
         companions: companions !== undefined ? parseInt(companions) : undefined,
         status,
+        whatsappInvite: whatsappInvite !== undefined ? !!whatsappInvite : undefined,
       }
     });
 

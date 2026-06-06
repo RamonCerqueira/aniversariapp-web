@@ -52,6 +52,7 @@ model Party {
   tasks       Task[]
   leads       Lead[]
   expenses    Expense[]
+  chatRooms   ChatRoom[]
 }
 
 model Guest {
@@ -62,6 +63,7 @@ model Guest {
   phone      String
   companions Int      @default(0)
   status     String   @default("pending") // confirmed | pending | declined
+  whatsappInvite Boolean @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -92,10 +94,34 @@ model SupplierProfile {
   instagram   String?
   city        String
   description String
-  images      String[] // URLs do portfólio
-  createdAt   DateTime @default(now())
+  images         String[] // URLs do portfólio
+  logo           String?
+  foundationYear Int?
+  socials        Json?    @default("{}")
+  differentials  String[] @default([])
+  portfolio      String[] @default([])
+  packages       Json?    @default("[]")
+  locationMap    Json?    @default("{}")
+  pricing        Json?    @default("{}")
+  services       Json     @default("[]") // Lista de serviços: { name, price, description }
+  blockedDates   String[] @default([]) // Datas bloqueadas "YYYY-MM-DD"
+  viewStats      Json?    @default("{}") // Armazena visualizações: { "YYYY-MM": count }
+  createdAt      DateTime @default(now())
   updatedAt   DateTime @updatedAt
   leads       Lead[]
+  chatRooms   ChatRoom[]
+  reviews     SupplierReview[]
+}
+
+model SupplierReview {
+  id         String          @id @default(uuid())
+  supplierId String
+  supplier   SupplierProfile @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  clientName String
+  partyType  String?
+  rating     Int             // 1 a 5
+  content    String
+  createdAt  DateTime        @default(now())
 }
 
 model Lead {
@@ -119,4 +145,26 @@ model Expense {
   paid      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ChatRoom {
+  id         String   @id @default(uuid())
+  partyId    String
+  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   SupplierProfile @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  isClosed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  messages   Message[]
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  roomId     String
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId   String   
+  senderRole String   
+  content    String
+  createdAt  DateTime @default(now())
 }

@@ -71,7 +71,7 @@ mkdir -p /var/www/celebrate-api
 cd /var/www/celebrate-api
 
 # Clone seu repositório GitHub
-git clone https://github.com/RamonCerqueira/aniversariapp-web.git .
+git clone https://github.com/RamonCerqueira/Celebrate-web.git .
 
 # Vá para a pasta do backend
 cd backend

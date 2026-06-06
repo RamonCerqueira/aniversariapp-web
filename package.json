@@ -1,5 +1,5 @@
 {
-  "name": "aniversariapp-web",
+  "name": "celebrate",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -11,13 +11,13 @@
     "planejamento",
     "organizacao"
   ],
-  "author": "AniversariApp Team",
+  "author": "Celebrate Team",
   "license": "MIT",
-  "homepage": "https://aniversariapp.vercel.app",
+  "homepage": "https://celebrate.genioplay.com.br",
   "scripts": {
     "dev:frontend": "vite",
-    "dev:backend": "npm run dev --prefix backend",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:backend": "cd backend && pnpm dev",
+    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

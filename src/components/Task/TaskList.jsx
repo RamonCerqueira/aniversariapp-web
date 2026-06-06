@@ -8,6 +8,7 @@ import { useParty } from '../../contexts/PartyContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -343,16 +344,16 @@ export default function TaskList({ onBack }) {
             </div>
             <div>
               <Label className="text-sm font-semibold mb-2 block" htmlFor="task-prio">Prioridade</Label>
-              <select
-                id="task-prio"
-                className="w-full border rounded-xl px-4 h-[50px] bg-background border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={form.prioridade}
-                onChange={(e) => setForm({ ...form, prioridade: e.target.value })}
-              >
-                {prioridades.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              <Select value={form.prioridade} onValueChange={(value) => setForm({ ...form, prioridade: value })}>
+                <SelectTrigger className="w-full border rounded-xl px-4 h-[50px] bg-background border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {prioridades.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <DialogFooter className="flex gap-2 pt-4">

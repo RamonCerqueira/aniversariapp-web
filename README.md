@@ -1,8 +1,8 @@
-# AniversariApp - Aplicativo Web de Organização de Festas
+# Celebrate - Aplicativo Web de Organização de Festas
 
 ## 🎉 Sobre o Projeto
 
-O **AniversariApp** é uma aplicação web completa desenvolvida em React para ajudar pessoas a planejar, organizar e executar suas próprias festas de aniversário. A aplicação oferece uma experiência moderna e intuitiva com animações fluidas e design responsivo.
+O **Celebrate** é uma aplicação web completa desenvolvida em React para ajudar pessoas a planejar, organizar e executar suas próprias festas de aniversário. A aplicação oferece uma experiência moderna e intuitiva com animações fluidas e design responsivo.
 
 ## ✨ Funcionalidades Implementadas
 
@@ -45,7 +45,7 @@ O **AniversariApp** é uma aplicação web completa desenvolvida em React para a
 ## 📁 Estrutura do Projeto
 
 ```
-aniversariapp-web/
+Celebrate-web/
 ├── public/                 # Arquivos públicos
 ├── src/
 │   ├── components/        # Componentes React
@@ -80,7 +80,7 @@ aniversariapp-web/
 git clone <url-do-repositorio>
 
 # Entre no diretório
-cd aniversariapp-web
+cd Celebrate-web
 
 # Instale as dependências
 npm install
