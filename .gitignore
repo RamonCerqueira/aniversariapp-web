@@ -157,3 +157,11 @@ backend/.wwebjs_cache/
 *.db-journal
 *.sqlite
 *.sqlite3
+
+# Generated PDF reports
+*.pdf
+
+# Backend specific uploads and local envs
+backend/.env
+backend/uploads/
+uploads/

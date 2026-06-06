@@ -230,8 +230,16 @@ export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }
       {/* Top Header Row */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#2A2A2A]">
-            Bem-vindo(a), <span className="uppercase">{user?.name?.split(' ')[0] || 'Host'}</span>!
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#2A2A2A] flex flex-wrap items-center gap-3">
+            <span>Bem-vindo(a), <span className="uppercase">{user?.name?.split(' ')[0] || 'Host'}</span>!</span>
+            <button
+              onClick={() => onQuickAction && onQuickAction('subscription')}
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#D4AF37] bg-white border border-[#EAE3DA] hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/5 px-3 py-1.5 rounded-full shadow-sm cursor-pointer transition-all duration-300"
+              title="Ir para tela de Assinaturas"
+            >
+              <Sparkles size={11} className="text-[#D4AF37]" />
+              <span>Plano {user?.plan || 'FREE'}</span>
+            </button>
           </h1>
           <p className="text-sm font-bold text-[#8A857D] mt-1 tracking-wide">
             Vamos celebrar!
@@ -265,22 +273,56 @@ export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }
           <div className="lg:col-span-7 flex flex-col gap-8">
             
             {/* Active Event Card */}
-            <div className="relative rounded-[32px] overflow-hidden bg-gradient-to-br from-[#FFE3D8] to-[#D4F0E8] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] isolate group cursor-pointer transition-transform hover:-translate-y-1" onClick={() => onViewParty(currentParty.id)}>
-              <div className="absolute top-6 right-6 w-8 h-8 rounded-full bg-white/40 flex items-center justify-center backdrop-blur-sm group-hover:bg-white/60 transition-colors">
-                <ChevronRight size={16} className="text-[#2A2A2A]" strokeWidth={2} />
+            <div 
+              onClick={() => onViewParty(currentParty.id)}
+              className="relative rounded-[32px] overflow-hidden p-8 shadow-[0_20px_50px_rgba(138,133,125,0.08)] isolate group cursor-pointer transition-all duration-500 hover:shadow-[0_30px_60px_rgba(138,133,125,0.15)] hover:-translate-y-1.5 border border-[#EAE3DA]"
+              style={{
+                background: currentParty.coverPhoto 
+                  ? `linear-gradient(180deg, rgba(253, 251, 247, 0.45) 0%, rgba(253, 251, 247, 0.9) 100%), url(${currentParty.coverPhoto}) center/cover no-repeat`
+                  : `linear-gradient(135deg, #FDFBF7 0%, #F1EBE1 100%)`
+              }}
+            >
+              {/* Soft gold/rose glow in top-right */}
+              {!currentParty.coverPhoto && (
+                <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-[#FF7E67]/5 blur-3xl group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+              )}
+              
+              <div className="absolute top-6 right-6 w-10 h-10 rounded-2xl bg-white/85 flex items-center justify-center backdrop-blur-md border border-[#EAE3DA] group-hover:bg-[#FF7E67] group-hover:text-white group-hover:border-[#FF7E67] transition-all duration-300 shadow-sm">
+                <ChevronRight size={18} className="text-[#2A2A2A] group-hover:text-white group-hover:scale-110 transition-transform" strokeWidth={2.5} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#2A2A2A]/60 mb-2 block">Evento Ativo</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-[#2A2A2A] leading-tight mb-6 max-w-[80%]">
+              
+              <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.25em] text-[#FF7E67] mb-3 bg-[#FFF4F1] border border-[#FFE3D8] px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7E67] animate-pulse" />
+                Evento Ativo
+              </span>
+              
+              <h2 className="text-3xl sm:text-4xl font-serif text-[#2A2A2A] tracking-wide leading-tight mb-8 max-w-[85%] font-medium group-hover:text-[#FF7E67] transition-colors duration-300">
                 {currentParty.name || 'Nova Festa'}
               </h2>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[#2A2A2A]/80 font-bold text-xs sm:text-sm">
-                  <CalendarDays size={16} />
-                  <span>{new Date(currentParty.date).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric', year: 'numeric' })}, {new Date(currentParty.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#EAE3DA] pt-6">
+                <div className="flex items-center gap-3 text-[#2A2A2A] font-medium text-xs sm:text-sm">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE3DA] flex items-center justify-center text-[#FF7E67] shrink-0 shadow-sm">
+                    <CalendarDays size={14} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-extrabold uppercase text-[#8A857D] tracking-widest leading-none mb-0.5">Data & Hora</span>
+                    <span className="text-[11px] sm:text-xs font-bold leading-normal text-[#2A2A2A]/90">
+                      {new Date(currentParty.date).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric', year: 'numeric' })} às {new Date(currentParty.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}h
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[#2A2A2A]/80 font-bold text-xs sm:text-sm">
-                  <MapPin size={16} />
-                  <span>{currentParty.location || 'Local a definir'}</span>
+                
+                <div className="flex items-center gap-3 text-[#2A2A2A] font-medium text-xs sm:text-sm">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE3DA] flex items-center justify-center text-[#FF7E67] shrink-0 shadow-sm">
+                    <MapPin size={14} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-extrabold uppercase text-[#8A857D] tracking-widest leading-none mb-0.5">Local</span>
+                    <span className="text-[11px] sm:text-xs font-bold leading-normal truncate max-w-[150px] text-[#2A2A2A]/90">
+                      {currentParty.location || 'Local a definir'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

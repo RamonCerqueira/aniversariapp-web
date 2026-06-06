@@ -44,7 +44,7 @@ router.post('/logout', async (req, res) => {
 });
 
 router.post('/send', async (req, res) => {
-  const { phoneNumbers, message, mediaUrl } = req.body;
+  const { phoneNumbers, message, mediaUrl, rsvpMode, contacts, origin } = req.body;
   
   if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
     return res.status(400).json({ error: 'Nenhum número de telefone fornecido' });
@@ -54,7 +54,7 @@ router.post('/send', async (req, res) => {
   }
 
   try {
-    const results = await whatsappService.sendBulkInvites(phoneNumbers, message, mediaUrl);
+    const results = await whatsappService.sendBulkInvites(phoneNumbers, message, mediaUrl, { rsvpMode, contacts, origin });
     res.json({ success: true, results });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Erro ao realizar disparo em massa' });

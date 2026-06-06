@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Check, Sparkles, Zap, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SubscriptionScreen({ onBack }) {
-  const { user, subscribeToPlan } = useAuth();
+  const { user, createStripeSession } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
@@ -71,12 +72,23 @@ export default function SubscriptionScreen({ onBack }) {
     if (planId === currentPlan) return;
     setLoadingPlan(planId);
     try {
-      await subscribeToPlan(planId);
-      alert(`Parabéns! Você assinou o plano ${planId} com sucesso via Stripe Test! 🎉`);
-      onBack();
+      const session = await createStripeSession(planId);
+      if (session && session.url) {
+        toast.info('Redirecionando...', {
+          description: 'Estamos te redirecionando para a página de pagamento segura do Stripe.',
+          position: 'top-center'
+        });
+        // Redireciona o usuário para o Checkout do Stripe
+        window.location.href = session.url;
+      } else {
+        throw new Error('URL de checkout do Stripe não foi retornada.');
+      }
     } catch (error) {
       console.error('Erro ao fazer upgrade:', error);
-      alert('Ocorreu um erro ao processar sua assinatura. Tente novamente.');
+      toast.error('Erro na Assinatura', {
+        description: 'Ocorreu um erro ao processar sua assinatura. Tente novamente.',
+        position: 'top-center'
+      });
     } finally {
       setLoadingPlan(null);
     }

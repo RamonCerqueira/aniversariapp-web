@@ -14,7 +14,7 @@ export const getParties = async (req, res) => {
 };
 
 export const createParty = async (req, res) => {
-  const { name, type, date, location, description, guestCount, budget } = req.body;
+  const { name, type, date, location, description, guestCount, budget, theme, dressCode, giftListUrl, timeline, hotels, playlistUrl, gallery, coverPhoto, coverVideo, teaserVideo } = req.body;
 
   try {
     if (!name || !type || !date || !location) {
@@ -31,6 +31,16 @@ export const createParty = async (req, res) => {
         description,
         guestCount: parseInt(guestCount) || 0,
         budget: budget ? parseFloat(budget) : null,
+        theme: theme || 'luxury-black',
+        dressCode: dressCode || null,
+        giftListUrl: giftListUrl || null,
+        timeline: timeline || null,
+        hotels: hotels || null,
+        playlistUrl: playlistUrl || null,
+        gallery: gallery || [],
+        coverPhoto: coverPhoto || null,
+        coverVideo: coverVideo || null,
+        teaserVideo: teaserVideo || null
       }
     });
 
@@ -43,7 +53,7 @@ export const createParty = async (req, res) => {
 
 export const updateParty = async (req, res) => {
   const { id } = req.params;
-  const { name, type, date, location, description, guestCount, budget } = req.body;
+  const { name, type, date, location, description, guestCount, budget, theme, dressCode, giftListUrl, timeline, hotels, playlistUrl, gallery, coverPhoto, coverVideo, teaserVideo } = req.body;
 
   try {
     const existingParty = await prisma.party.findFirst({
@@ -64,6 +74,16 @@ export const updateParty = async (req, res) => {
         description,
         guestCount: guestCount !== undefined ? parseInt(guestCount) : undefined,
         budget: budget !== undefined ? (budget ? parseFloat(budget) : null) : undefined,
+        theme: theme !== undefined ? theme : undefined,
+        dressCode: dressCode !== undefined ? dressCode : undefined,
+        giftListUrl: giftListUrl !== undefined ? giftListUrl : undefined,
+        timeline: timeline !== undefined ? timeline : undefined,
+        hotels: hotels !== undefined ? hotels : undefined,
+        playlistUrl: playlistUrl !== undefined ? playlistUrl : undefined,
+        gallery: gallery !== undefined ? gallery : undefined,
+        coverPhoto: coverPhoto !== undefined ? coverPhoto : undefined,
+        coverVideo: coverVideo !== undefined ? coverVideo : undefined,
+        teaserVideo: teaserVideo !== undefined ? teaserVideo : undefined
       }
     });
 

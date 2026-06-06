@@ -17,6 +17,7 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
     name: existingParty?.name || '',
     type: existingParty?.type || '',
     date: existingParty?.date ? formatDateForInput(existingParty.date) : '',
+    time: existingParty?.date ? formatTimeForInput(existingParty.date) : '19:00',
     location: existingParty?.location || '',
     description: existingParty?.description || '',
     guestCount: existingParty?.guestCount?.toString() || '',
@@ -27,11 +28,22 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   function formatDateForInput(date) {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
-  function parseDate(dateString) {
-    return new Date(dateString);
+  function formatTimeForInput(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  function parseDate(dateString, timeString) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const [hours, minutes] = (timeString || '19:00').split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes);
   }
 
   const partyTypeOptions = [
@@ -79,7 +91,7 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
       const partyData = {
         name: formData.name.trim(),
         type: formData.type,
-        date: parseDate(formData.date),
+        date: parseDate(formData.date, formData.time),
         location: formData.location.trim(),
         description: formData.description.trim(),
         guestCount: parseInt(formData.guestCount) || 0,
@@ -167,14 +179,23 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
                     required
                   />
 
-                  <FormInput
-                    label="Data da Festa"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    error={errors.date}
-                    required
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormInput
+                      label="Data da Festa"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                      error={errors.date}
+                      required
+                    />
+                    <FormInput
+                      label="Horário da Festa"
+                      type="time"
+                      value={formData.time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      required
+                    />
+                  </div>
 
                   <FormInput
                     label="Local da Festa"

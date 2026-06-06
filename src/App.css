@@ -189,3 +189,40 @@
   }
 }
 
+/* Custom keyframes & utility animations for Celebrate */
+@keyframes scanner-line {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.animate-scanner-line {
+  position: absolute;
+  animation: scanner-line 2s ease-in-out infinite;
+}
+
+@keyframes pulse-custom {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: .8;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-custom {
+  animation: pulse-custom 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+

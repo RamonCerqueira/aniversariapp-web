@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Search, UserCheck, UserX, Users, Clock, CheckCircle2, Sparkles, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function GateDesk({ onBack }) {
   const { guests, updateGuest } = useGuests();
@@ -45,7 +46,10 @@ export default function GateDesk({ onBack }) {
       });
     } catch (error) {
       console.error('Erro ao atualizar check-in:', error);
-      alert('Erro ao atualizar status. Tente novamente.');
+      toast.error('Erro no Check-in', {
+        description: 'Não foi possível atualizar o status. Tente novamente.',
+        position: 'top-center'
+      });
     }
   };
 

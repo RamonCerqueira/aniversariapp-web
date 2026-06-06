@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg 
+  xmlns="http://www.w3.org/2000/svg" 
+  viewBox="0 0 320 80" 
+  width="100%" 
+  height="100%"
+  fill="none"
+>
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="goldRose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#E5C158" />
+      <stop offset="50%" stopColor="#D4AF37" />
+      <stop offset="100%" stopColor="#B76E79" />
+    </linearGradient>
+    <linearGradient id="flame" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#FFDF73" />
+      <stop offset="100%" stopColor="#F97316" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Group for Icon -->
+  <g transform="translate(15, 8) scale(2)">
+    <!-- Base -->
+    <path 
+      d="M16 6C10.48 6 6 10.48 6 16C6 20.35 8.78 24.04 12.67 25.37L12 28.5C12 29.33 12.67 30 13.5 30H18.5C19.33 30 20 29.33 20 28.5L19.33 25.37C23.22 24.04 26 20.35 26 16C26 10.48 21.52 6 16 6Z" 
+      fill="url(#goldRose)" 
+    />
+    <!-- Flame -->
+    <path 
+      d="M16 0.5C16 0.5 13.5 3 13.5 5C13.5 6.38 14.62 7.5 16 7.5C17.38 7.5 18.5 6.38 18.5 5C18.5 3 16 0.5 16 0.5Z" 
+      fill="url(#flame)" 
+    />
+    <!-- Gloss -->
+    <path 
+      d="M11 11C10.45 11 10 11.45 10 12C10 13.66 11.34 15 13 15C13.55 15 14 14.55 14 14C14 13.45 13.55 13 13 13C11.9 13 11 12.1 11 11Z" 
+      fill="#FFFFFF" 
+      fill-opacity="0.45" 
+    />
+    <!-- Sparkle -->
+    <path 
+      d="M19 13.5C20 13.5 20.5 13 20.5 12C20.5 13 21 13.5 22 13.5C21 13.5 20.5 14 20.5 15C20.5 14 20 13.5 19 13.5Z" 
+      fill="#FFFFFF" 
+      fill-opacity="0.6" 
+    />
+  </g>
+
+  <!-- Text -->
+  <g transform="translate(90, 46)" filter="url(#shadow)">
+    <text 
+      font-family="'Playfair Display', 'Georgia', 'Times New Roman', serif" 
+      font-size="32" 
+      font-weight="900" 
+      letter-spacing="4" 
+      fill="url(#goldRose)"
+    >CELEBRATE</text>
+    <text 
+      y="18" 
+      font-family="'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', sans-serif" 
+      font-size="8.5" 
+      font-weight="700" 
+      letter-spacing="3.5" 
+      fill="#B76E79"
+      opacity="0.9"
+    >PREMIUM PARTY PLANNING</text>
+  </g>
+</svg>

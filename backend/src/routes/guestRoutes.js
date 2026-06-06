@@ -6,7 +6,8 @@ import {
   updateGuest, 
   deleteGuest, 
   rsvpResponse,
-  createGuestsBulk
+  createGuestsBulk,
+  checkInGuest
 } from '../controllers/guestController.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -21,6 +22,7 @@ router.get('/', requireAuth, getGuests);
 router.post('/', requireAuth, createGuest);
 router.post('/bulk', requireAuth, createGuestsBulk);
 router.put('/:id', requireAuth, updateGuest);
+router.patch('/:id/checkin', requireAuth, checkInGuest);
 router.delete('/:id', requireAuth, deleteGuest);
 
 export default router;

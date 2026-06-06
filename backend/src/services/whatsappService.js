@@ -74,11 +74,12 @@ class WhatsAppService {
     this.qrCodeData = null;
   }
 
-  async sendBulkInvites(phoneNumbers, message, mediaUrl = null) {
+  async sendBulkInvites(phoneNumbers, message, mediaUrl = null, options = {}) {
     if (this.status !== 'CONNECTED' || !this.client) {
       throw new Error('WhatsApp não está conectado.');
     }
 
+    const { rsvpMode, contacts, origin } = options;
     const results = [];
 
     // Preparar mídia se existir
@@ -98,11 +99,20 @@ class WhatsAppService {
       // O Brasil exige um '55' na frente
       const numberId = cleanPhone.startsWith('55') ? `${cleanPhone}@c.us` : `55${cleanPhone}@c.us`;
 
+      // Personalizar a mensagem com o link de RSVP individual se rsvpMode estiver ativo
+      let finalMessage = message;
+      if (rsvpMode && Array.isArray(contacts)) {
+        const contact = contacts.find(c => c.phone.replace(/\D/g, '') === cleanPhone);
+        if (contact && contact.guestId) {
+          finalMessage = message.replace(/\{\{\s*RSVP_LINK\s*\}\}/g, `${origin}/rsvp/${contact.guestId}`);
+        }
+      }
+
       try {
         if (media) {
-          await this.client.sendMessage(numberId, media, { caption: message });
+          await this.client.sendMessage(numberId, media, { caption: finalMessage });
         } else {
-          await this.client.sendMessage(numberId, message);
+          await this.client.sendMessage(numberId, finalMessage);
         }
         results.push({ phone: cleanPhone, success: true });
 

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CheckCircle, X, User, Phone, Users, PlusCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, X, User, Phone, Users, PlusCircle, Trash2, Mail, Hash, Layers } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 
@@ -26,6 +26,9 @@ export default function GuestForm({ existingGuest, onClose }) {
     accompany: '0',
     status: 'pending',
     whatsappInvite: false,
+    email: '',
+    tableNumber: '',
+    sector: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -38,6 +41,9 @@ export default function GuestForm({ existingGuest, onClose }) {
         accompany: existingGuest.accompany?.toString() || '0',
         status: existingGuest.status || 'pending',
         whatsappInvite: !!existingGuest.whatsappInvite,
+        email: existingGuest.email || '',
+        tableNumber: existingGuest.tableNumber || '',
+        sector: existingGuest.sector || '',
       });
     }
   }, [existingGuest]);
@@ -67,6 +73,9 @@ export default function GuestForm({ existingGuest, onClose }) {
       accompany: parseInt(form.accompany) || 0,
       status: form.status,
       whatsappInvite: form.whatsappInvite,
+      email: form.email.trim(),
+      tableNumber: form.tableNumber.trim(),
+      sector: form.sector.trim(),
     };
 
     try {
@@ -83,7 +92,10 @@ export default function GuestForm({ existingGuest, onClose }) {
               phone: '',
               accompany: '0',
               status: 'pending',
-              whatsappInvite: form.whatsappInvite, // keep preference
+              whatsappInvite: form.whatsappInvite,
+              email: '',
+              tableNumber: '',
+              sector: '',
             });
         } else {
           onClose();
@@ -98,7 +110,7 @@ export default function GuestForm({ existingGuest, onClose }) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-sm w-11/12 mx-auto rounded-3xl border-none shadow-2xl bg-background p-0 overflow-hidden [&>button:last-child]:hidden">
+      <DialogContent className="max-w-md w-11/12 mx-auto rounded-3xl border-none shadow-2xl bg-background p-0 overflow-hidden [&>button:last-child]:hidden max-h-[90vh] overflow-y-auto">
         
         {/* Background Decorative Elements */}
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
@@ -115,6 +127,19 @@ export default function GuestForm({ existingGuest, onClose }) {
             <p className="text-xs text-muted-foreground font-medium">
               {isEditing ? 'Atualize as informações do seu convidado.' : 'Adicione um novo convidado à sua lista.'}
             </p>
+            {isEditing && existingGuest && (
+              <div 
+                onClick={() => {
+                  navigator.clipboard.writeText(existingGuest.id);
+                  toast.success('ID do convidado copiado!');
+                }}
+                className="inline-flex items-center gap-1.5 bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 text-[10px] font-mono px-2 py-1 rounded-lg cursor-pointer transition-all self-start mt-1.5 border border-border/40"
+                title="Clique para copiar o ID do convidado"
+              >
+                <span>ID: {existingGuest.id}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </div>
+            )}
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -136,6 +161,22 @@ export default function GuestForm({ existingGuest, onClose }) {
               {errors.name && <p className="text-destructive text-xs mt-1 font-medium">{errors.name}</p>}
             </div>
 
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">E-mail</label>
+              <div className="relative">
+                <Mail size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="guest-email"
+                  type="email"
+                  placeholder="Ex: joao@email.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={`w-full bg-card border border-border rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-11`}
+                />
+              </div>
+            </div>
+
             {/* Telefone */}
             <div className="space-y-1.5">
               <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Telefone</label>
@@ -153,39 +194,69 @@ export default function GuestForm({ existingGuest, onClose }) {
               {errors.phone && <p className="text-destructive text-xs mt-1 font-medium">{errors.phone}</p>}
             </div>
 
-            {/* Acompanhantes */}
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Acompanhantes extras</label>
-              <div className="relative">
-                <Users size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  id="guest-accompany"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={form.accompany}
-                  onChange={(e) => setForm({ ...form, accompany: e.target.value })}
-                  className={`w-full bg-card border ${errors.accompany ? 'border-destructive' : 'border-border'} rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm`}
-                />
+            {/* Acompanhantes e Mesa/Setor */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Acompanhantes</label>
+                <div className="relative">
+                  <Users size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="guest-accompany"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={form.accompany}
+                    onChange={(e) => setForm({ ...form, accompany: e.target.value })}
+                    className={`w-full bg-card border ${errors.accompany ? 'border-destructive' : 'border-border'} rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm`}
+                  />
+                </div>
               </div>
-              {errors.accompany && <p className="text-destructive text-xs mt-1 font-medium">{errors.accompany}</p>}
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Mesa</label>
+                <div className="relative">
+                  <Hash size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="guest-table"
+                    placeholder="Mesa"
+                    value={form.tableNumber}
+                    onChange={(e) => setForm({ ...form, tableNumber: e.target.value })}
+                    className={`w-full bg-card border border-border rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-11`}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Status */}
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Status</label>
-              <div className="relative">
-                <CheckCircle size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
-                  <SelectTrigger className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-11">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="confirmed">Confirmado</SelectItem>
-                    <SelectItem value="declined">Recusado</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Setor / Área</label>
+                <div className="relative">
+                  <Layers size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="guest-sector"
+                    placeholder="Ex: VIP"
+                    value={form.sector}
+                    onChange={(e) => setForm({ ...form, sector: e.target.value })}
+                    className={`w-full bg-card border border-border rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-11`}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Status</label>
+                <div className="relative">
+                  <CheckCircle size={16} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
+                    <SelectTrigger className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 pl-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm h-11">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="declined">Recusado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -240,6 +311,58 @@ export default function GuestForm({ existingGuest, onClose }) {
 
             </div>
 
+            {/* RSVP DETAILS SECTION (Read-only display for Organizer) */}
+            {isEditing && existingGuest && existingGuest.status === 'confirmed' && (
+              <div className="bg-muted/40 p-4 rounded-2xl border border-border/40 space-y-3.5 mt-4 text-xs font-semibold">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  ✨ Respostas do RSVP
+                </h4>
+                
+                {existingGuest.dietaryRestrictions?.length > 0 && (
+                  <div>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground block">Restrições Alimentares</span>
+                    <span className="text-foreground text-xs mt-0.5 block">{existingGuest.dietaryRestrictions.join(', ')}</span>
+                  </div>
+                )}
+
+                {existingGuest.favoriteSong && (
+                  <div>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground block">Música Favorita</span>
+                    <span className="text-foreground text-xs mt-0.5 block italic">"{existingGuest.favoriteSong}"</span>
+                  </div>
+                )}
+
+                {existingGuest.messageToHost && (
+                  <div>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground block">Recado para os Anfitriões</span>
+                    <p className="text-foreground text-xs mt-1 bg-background/50 p-2.5 rounded-lg border border-border/40 whitespace-pre-wrap leading-relaxed font-medium">
+                      {existingGuest.messageToHost}
+                    </p>
+                  </div>
+                )}
+
+                {existingGuest.photoUrl && (
+                  <div>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground block mb-1">Selfie Enviada</span>
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border border-border/50 shadow-inner">
+                      <img src={existingGuest.photoUrl} alt="Selfie do Convidado" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                )}
+
+                {existingGuest.companionNames?.length > 0 && (
+                  <div>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground block">Acompanhantes Cadastrados</span>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5 text-xs text-foreground/80 font-medium">
+                      {existingGuest.companionNames.map((name, i) => (
+                        <li key={i}>{name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
@@ -260,7 +383,7 @@ export default function GuestForm({ existingGuest, onClose }) {
 
         </div>
 
-        {/* Custom Close Button overriding Dialog default if it exists */}
+        {/* Custom Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 rounded-full p-2 bg-background/50 hover:bg-background/80 backdrop-blur-sm border border-border/50 text-muted-foreground transition-all z-20 cursor-pointer"

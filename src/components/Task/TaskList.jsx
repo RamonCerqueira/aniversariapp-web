@@ -17,7 +17,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { X, PlusCircle, Loader2, ArrowLeft, Check, Calendar, Tag, Trash2, Edit3, CheckCircle2 } from 'lucide-react';
+import { X, PlusCircle, Loader2, ArrowLeft, Check, Calendar, Tag, Trash2, Edit3, CheckCircle2, FileText } from 'lucide-react';
+import { ReportPDFGenerator } from '../Reports/ReportPDFGenerator.js';
 
 const prioridades = ['Alta', 'Média', 'Baixa'];
 
@@ -52,6 +53,21 @@ export default function TaskList({ onBack }) {
       console.error('Erro ao carregar tarefas da API:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGeneratePDF = () => {
+    if (!currentParty) {
+      toast.error('Nenhuma festa ativa.');
+      return;
+    }
+    toast.info('Gerando PDF de tarefas...');
+    try {
+      ReportPDFGenerator.generateTaskListPDF(currentParty, tasks);
+      toast.success('Relatório PDF baixado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao gerar relatório PDF.');
     }
   };
 
@@ -193,9 +209,18 @@ export default function TaskList({ onBack }) {
     <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-8 transition-colors duration-300">
       <div className="flex justify-between items-center border-b pb-5">
         <h1 className="text-3xl font-extrabold text-foreground tracking-tight">🎉 Checklist da Festa</h1>
-        <Button onClick={onBack} variant="outline" className="rounded-xl px-4 py-5 font-bold flex items-center gap-1 shadow-sm border-border/80 hover:bg-muted">
-          <ArrowLeft size={16} /> Voltar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleGeneratePDF}
+            variant="outline"
+            className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-sm border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+          >
+            <FileText size={16} /> Relatório PDF
+          </Button>
+          <Button onClick={onBack} variant="outline" className="rounded-xl px-4 py-5 font-bold flex items-center gap-1 shadow-sm border-border/80 hover:bg-muted">
+            <ArrowLeft size={16} /> Voltar
+          </Button>
+        </div>
       </div>
 
       <div className="bg-card/50 backdrop-blur-md p-6 rounded-3xl border border-border/50 shadow-lg shadow-black/[0.01] space-y-4">

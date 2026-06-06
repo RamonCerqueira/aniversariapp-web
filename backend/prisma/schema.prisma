@@ -53,19 +53,43 @@ model Party {
   leads       Lead[]
   expenses    Expense[]
   chatRooms   ChatRoom[]
+  
+  // Customizações do RSVP Premium
+  theme       String   @default("luxury-black")
+  dressCode   String?
+  giftListUrl String?
+  timeline    Json?
+  hotels      Json?
+  playlistUrl String?
+  gallery     String[] @default([])
+  coverPhoto  String?
+  coverVideo  String?
+  teaserVideo String?
 }
 
 model Guest {
-  id         String   @id @default(uuid())
-  partyId    String
-  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  name       String
-  phone      String
-  companions Int      @default(0)
-  status     String   @default("pending") // confirmed | pending | declined
-  whatsappInvite Boolean @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String    @id @default(uuid())
+  partyId        String
+  party          Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  name           String
+  phone          String
+  companions     Int       @default(0)
+  companionNames String[]  @default([])
+  status         String    @default("pending") // confirmed | pending | declined
+  whatsappInvite Boolean   @default(false)
+  checkedIn      Boolean   @default(false)
+  checkedInAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Detalhes do RSVP Premium
+  email               String?
+  dietaryRestrictions String[]  @default([])
+  favoriteSong        String?
+  photoUrl            String?
+  messageToHost       String?
+  tableNumber         String?
+  sector              String?
 }
 
 model Task {

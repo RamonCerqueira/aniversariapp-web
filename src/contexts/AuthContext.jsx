@@ -113,6 +113,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const createStripeSession = async (plan) => {
+    try {
+      const res = await api.stripe.createCheckoutSession(plan);
+      return res;
+    } catch (error) {
+      console.error('Erro ao criar sessão do Stripe:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -122,6 +132,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     subscribeToPlan,
+    createStripeSession,
   };
 
   return (

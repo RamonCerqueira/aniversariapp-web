@@ -26,7 +26,7 @@ async function request(endpoint, options = {}) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Erro na requisição');
+    throw new Error(data.message || data.error || 'Erro na requisição');
   }
 
   return data;
@@ -63,8 +63,11 @@ export const api = {
 
     // RSVP Público (sem necessidade de token)
     publicGet: (id) => request(`/guests/public/${id}`),
-    publicRsvp: (id, status) =>
-      request(`/guests/public/${id}/rsvp`, { method: 'PATCH', body: { status } }),
+    publicRsvp: (id, data) =>
+      request(`/guests/public/${id}/rsvp`, { method: 'PATCH', body: data }),
+
+    // Check-in via QR Code (autenticado)
+    checkIn: (id) => request(`/guests/${id}/checkin`, { method: 'PATCH' }),
   },
 
   // Tarefas (Checklist)
@@ -148,9 +151,15 @@ export const api = {
     status: () => request('/whatsapp/status'),
     connect: () => request('/whatsapp/connect', { method: 'POST' }),
     logout: () => request('/whatsapp/logout', { method: 'POST' }),
-    sendBulk: (phoneNumbers, message, mediaUrl) => request('/whatsapp/send', {
+    sendBulk: (phoneNumbers, message, mediaUrl, options = {}) => request('/whatsapp/send', {
       method: 'POST',
-      body: { phoneNumbers, message, mediaUrl }
+      body: { phoneNumbers, message, mediaUrl, ...options }
     })
+  },
+
+  // Integração Stripe
+  stripe: {
+    createCheckoutSession: (plan) =>
+      request('/stripe/create-checkout-session', { method: 'POST', body: { plan } }),
   }
 };

@@ -62,7 +62,17 @@ export function GuestProvider({ children }) {
         name: g.name,
         phone: g.phone,
         accompany: g.companions,
-        status: g.status
+        companionNames: g.companionNames,
+        status: g.status,
+        checkedIn: g.checkedIn,
+        checkedInAt: g.checkedInAt,
+        email: g.email || '',
+        dietaryRestrictions: g.dietaryRestrictions || [],
+        favoriteSong: g.favoriteSong || '',
+        photoUrl: g.photoUrl || '',
+        messageToHost: g.messageToHost || '',
+        tableNumber: g.tableNumber || '',
+        sector: g.sector || ''
       }));
       dispatch({ type: ACTIONS.LOAD, payload: parsedGuests });
     } catch (error) {
@@ -78,7 +88,10 @@ export function GuestProvider({ children }) {
         name: guestData.name,
         phone: guestData.phone,
         companions: guestData.accompany,
-        status: guestData.status
+        status: guestData.status,
+        email: guestData.email,
+        tableNumber: guestData.tableNumber,
+        sector: guestData.sector
       });
 
       const parsedGuest = {
@@ -87,7 +100,17 @@ export function GuestProvider({ children }) {
         name: created.name,
         phone: created.phone,
         accompany: created.companions,
-        status: created.status
+        companionNames: created.companionNames,
+        status: created.status,
+        checkedIn: created.checkedIn,
+        checkedInAt: created.checkedInAt,
+        email: created.email || '',
+        dietaryRestrictions: created.dietaryRestrictions || [],
+        favoriteSong: created.favoriteSong || '',
+        photoUrl: created.photoUrl || '',
+        messageToHost: created.messageToHost || '',
+        tableNumber: created.tableNumber || '',
+        sector: created.sector || ''
       };
 
       dispatch({ type: ACTIONS.ADD, payload: parsedGuest });
@@ -107,7 +130,17 @@ export function GuestProvider({ children }) {
         name: g.name,
         phone: g.phone,
         accompany: g.companions,
-        status: g.status
+        companionNames: g.companionNames,
+        status: g.status,
+        checkedIn: g.checkedIn,
+        checkedInAt: g.checkedInAt,
+        email: g.email || '',
+        dietaryRestrictions: g.dietaryRestrictions || [],
+        favoriteSong: g.favoriteSong || '',
+        photoUrl: g.photoUrl || '',
+        messageToHost: g.messageToHost || '',
+        tableNumber: g.tableNumber || '',
+        sector: g.sector || ''
       }));
       dispatch({ type: ACTIONS.LOAD, payload: parsedGuests });
     } catch (error) {
@@ -122,7 +155,10 @@ export function GuestProvider({ children }) {
         name: guestData.name,
         phone: guestData.phone,
         companions: guestData.accompany,
-        status: guestData.status
+        status: guestData.status,
+        email: guestData.email,
+        tableNumber: guestData.tableNumber,
+        sector: guestData.sector
       });
 
       const parsedGuest = {
@@ -131,7 +167,17 @@ export function GuestProvider({ children }) {
         name: updated.name,
         phone: updated.phone,
         accompany: updated.companions,
-        status: updated.status
+        companionNames: updated.companionNames,
+        status: updated.status,
+        checkedIn: updated.checkedIn,
+        checkedInAt: updated.checkedInAt,
+        email: updated.email || '',
+        dietaryRestrictions: updated.dietaryRestrictions || [],
+        favoriteSong: updated.favoriteSong || '',
+        photoUrl: updated.photoUrl || '',
+        messageToHost: updated.messageToHost || '',
+        tableNumber: updated.tableNumber || '',
+        sector: updated.sector || ''
       };
 
       dispatch({ type: ACTIONS.UPDATE, payload: parsedGuest });

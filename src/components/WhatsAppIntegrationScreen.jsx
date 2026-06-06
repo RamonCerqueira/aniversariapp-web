@@ -27,7 +27,7 @@ export default function WhatsAppIntegrationScreen() {
   const [qrCode, setQrCode] = useState(null);
 
   // Configuração do disparo
-  const [configType, setConfigType] = useState('template'); // 'template', 'upload', 'link'
+  const [configType, setConfigType] = useState('template'); // 'template', 'upload', 'link', 'rsvp'
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0].id);
   const [customImage, setCustomImage] = useState(null);
   const [message, setMessage] = useState('');
@@ -44,12 +44,15 @@ export default function WhatsAppIntegrationScreen() {
     return () => clearInterval(interval);
   }, [status]);
 
-  // Preenche mensagem padrão quando festa muda
+  // Preenche mensagem padrão quando festa ou tipo de configuração muda
   useEffect(() => {
-    if (currentParty) {
+    if (!currentParty) return;
+    if (configType === 'rsvp') {
+      setMessage(`Olá! Você está convidado(a) para *${currentParty.name}*! 🥳\n\nData: ${new Date(currentParty.date).toLocaleDateString('pt-BR')}\n\nConfirme sua presença pelo seu link personalizado:\n{{RSVP_LINK}}\n\nEspero você lá! 🎉`);
+    } else {
       setMessage(`Olá! Você está convidado para *${currentParty.name}*! 🥳\n\nData: ${new Date(currentParty.date).toLocaleDateString('pt-BR')}\nHorário: ${currentParty.time || 'A definir'}\n\nConfirme sua presença no link: Celebrate.com.br/rsvp/${currentParty.id}\n\nEspero você lá!`);
     }
-  }, [currentParty]);
+  }, [currentParty, configType]);
 
   const checkStatus = async () => {
     try {
@@ -115,23 +118,28 @@ export default function WhatsAppIntegrationScreen() {
       return toast.warning('A mensagem não pode ser vazia.');
     }
 
-    const phones = guests
-      .filter(g => g.phone && g.phone.length > 8 && g.whatsappInvite)
-      .map(g => g.phone);
+    const eligibleGuests = guests.filter(g => g.phone && g.phone.length > 8 && g.whatsappInvite);
 
-    if (phones.length === 0) {
+    if (eligibleGuests.length === 0) {
       return toast.error('Nenhum convidado marcado para envio via WhatsApp possui telefone válido.');
     }
 
     setIsSending(true);
-    toast.info(`Iniciando envio para ${phones.length} contatos... Não feche a página!`);
+    toast.info(`Iniciando envio para ${eligibleGuests.length} contatos... Não feche a página!`);
 
     try {
-      // PROTOTYPE: Estamos mockando o mediaUrl como null no request final pq a API precisa processar base64 e URL de forma nativa.
-      const res = await api.whatsapp.sendBulk(phones, message, null);
+      let res;
+      if (configType === 'rsvp') {
+        // Modo RSVP: envia link individual por convidado
+        const rsvpContacts = eligibleGuests.map(g => ({ phone: g.phone, guestId: g.id }));
+        res = await api.whatsapp.sendBulk(rsvpContacts.map(c => c.phone), message, null, { rsvpMode: true, contacts: rsvpContacts, origin: window.location.origin });
+      } else {
+        const phones = eligibleGuests.map(g => g.phone);
+        res = await api.whatsapp.sendBulk(phones, message, null);
+      }
 
-      const successCount = res.results.filter(r => r.success).length;
-      toast.success(`Disparo concluído! Enviado com sucesso para ${successCount} de ${phones.length} contatos.`);
+      const successCount = res.results?.filter(r => r.success).length || 0;
+      toast.success(`Disparo concluído! Enviado com sucesso para ${successCount} de ${eligibleGuests.length} contatos.`);
     } catch (error) {
       toast.error(error.message || 'Erro crítico durante o envio.');
     } finally {
@@ -225,15 +233,18 @@ export default function WhatsAppIntegrationScreen() {
           <div className={`transition-opacity duration-300 ${status !== 'CONNECTED' ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
 
             {/* Abas de Tipo de Convite */}
-            <div className="flex bg-muted p-1 rounded-2xl mb-6 border border-border/50">
-              <button onClick={() => setConfigType('template')} className={`flex-1 py-2 text-sm font-bold rounded-xl transition-colors ${configType === 'template' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <ImageIcon size={16} className="inline mr-2 -mt-0.5" /> Modelos
+            <div className="flex bg-muted p-1 rounded-2xl mb-6 border border-border/50 gap-1">
+              <button onClick={() => setConfigType('template')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'template' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <ImageIcon size={14} className="inline mr-1 -mt-0.5" /> Modelos
               </button>
-              <button onClick={() => setConfigType('upload')} className={`flex-1 py-2 text-sm font-bold rounded-xl transition-colors ${configType === 'upload' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Upload size={16} className="inline mr-2 -mt-0.5" /> Upload
+              <button onClick={() => setConfigType('upload')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'upload' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Upload size={14} className="inline mr-1 -mt-0.5" /> Upload
               </button>
-              <button onClick={() => setConfigType('link')} className={`flex-1 py-2 text-sm font-bold rounded-xl transition-colors ${configType === 'link' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Link size={16} className="inline mr-2 -mt-0.5" /> Apenas Link
+              <button onClick={() => setConfigType('link')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'link' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Link size={14} className="inline mr-1 -mt-0.5" /> Texto
+              </button>
+              <button onClick={() => setConfigType('rsvp')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${configType === 'rsvp' ? 'bg-emerald-500 shadow-sm text-white shadow-emerald-500/20' : 'text-muted-foreground hover:text-foreground'}`}>
+                <QrCode size={14} className="inline mr-1 -mt-0.5" /> RSVP
               </button>
             </div>
 
@@ -295,8 +306,28 @@ export default function WhatsAppIntegrationScreen() {
                   </div>
                   <h3 className="font-black text-lg">Apenas Texto</h3>
                   <p className="text-sm font-medium text-muted-foreground max-w-sm">
-                    Nenhuma imagem será enviada. Apenas o texto digitado abaixo será disparado para seus convidados. O WhatsApp tentará gerar um preview automático dos links que você incluir na mensagem.
+                    Nenhuma imagem será enviada. Apenas o texto digitado abaixo será disparado. O WhatsApp gerará preview dos links na mensagem.
                   </p>
+                </div>
+              )}
+
+              {configType === 'rsvp' && (
+                <div className="space-y-4 h-full flex flex-col justify-center items-center text-center p-6">
+                  <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-2">
+                    <QrCode size={32} className="text-emerald-500" />
+                  </div>
+                  <h3 className="font-black text-lg text-foreground">RSVP Digital Personalizado</h3>
+                  <p className="text-sm font-medium text-muted-foreground max-w-sm">
+                    Cada convidado recebe o <strong>link único do RSVP dele</strong>. Use <code className="bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded font-mono text-xs">{"{{ RSVP_LINK }}"}</code> na mensagem — o sistema substitui automaticamente.
+                  </p>
+                  {guests.filter(g => g.whatsappInvite && g.phone).length > 0 && (
+                    <div className="w-full mt-2 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-left">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Preview da mensagem para o 1º convidado:</p>
+                      <p className="text-xs font-mono text-foreground/70 whitespace-pre-wrap break-all">
+                        {message.replace('{{RSVP_LINK}}', `${window.location.origin}/rsvp/${guests.find(g => g.whatsappInvite && g.phone)?.id || '...'}`).slice(0, 200)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

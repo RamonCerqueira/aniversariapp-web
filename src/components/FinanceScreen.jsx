@@ -27,10 +27,12 @@ import {
   Loader2, 
   Sparkles,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { toast } from 'sonner';
+import { ReportPDFGenerator } from './Reports/ReportPDFGenerator.js';
 
 export default function FinanceScreen({ onBack }) {
   const { parties, currentParty } = useParty();
@@ -76,6 +78,21 @@ export default function FinanceScreen({ onBack }) {
       toast.error('Não foi possível carregar as despesas da festa.', { position: 'top-center' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGeneratePDF = () => {
+    if (!activeParty) {
+      toast.error('Nenhuma festa selecionada.');
+      return;
+    }
+    toast.info('Gerando PDF financeiro...');
+    try {
+      ReportPDFGenerator.generateFinancePDF(activeParty, expenses);
+      toast.success('Relatório PDF baixado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao gerar relatório PDF.');
     }
   };
 
@@ -461,14 +478,26 @@ export default function FinanceScreen({ onBack }) {
                 <h3 className="text-lg sm:text-xl font-extrabold text-foreground">Histórico de Custos</h3>
                 <p className="text-xs text-muted-foreground">Veja e edite os lançamentos financeiros da comemoração</p>
               </div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  onClick={handleOpenForm} 
-                  className="bg-primary hover:bg-primary/95 text-white flex items-center justify-center gap-1.5 py-5 px-5 rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-primary/20 w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Lançar Despesa
-                </Button>
-              </motion.div>
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                  <Button 
+                    onClick={handleGeneratePDF} 
+                    variant="outline"
+                    className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 flex items-center justify-center gap-1.5 py-5 px-5 rounded-xl font-bold text-xs sm:text-sm shadow-sm w-full"
+                  >
+                    <FileText size={16} /> Relatório PDF
+                  </Button>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                  <Button 
+                    onClick={handleOpenForm} 
+                    className="bg-primary hover:bg-primary/95 text-white flex items-center justify-center gap-1.5 py-5 px-5 rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-primary/20 w-full"
+                  >
+                    <Plus size={16} /> Lançar Despesa
+                  </Button>
+                </motion.div>
+              </div>
             </div>
 
             {/* Lista de Transações */}

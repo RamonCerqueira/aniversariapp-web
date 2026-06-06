@@ -17,6 +17,7 @@ import aiRoutes from './routes/aiRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import whatsappRoutes from './routes/whatsappRoutes.js';
+import stripeRoutes from './routes/stripeRoutes.js';
 import path from 'path';
 
 dotenv.config();
@@ -28,7 +29,11 @@ export const prisma = new PrismaClient();
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -42,9 +47,12 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/stripe', stripeRoutes);
 
 // Servir a pasta de uploads publicamente
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+
 
 // Rota de teste
 app.get('/health', (req, res) => {
@@ -63,3 +71,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor Celebrate rodando na porta ${port}`);
 });
+
+

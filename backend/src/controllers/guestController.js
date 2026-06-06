@@ -33,6 +33,17 @@ export const getGuestPublic = async (req, res) => {
             name: true,
             date: true,
             location: true,
+            type: true,
+            theme: true,
+            dressCode: true,
+            giftListUrl: true,
+            timeline: true,
+            hotels: true,
+            playlistUrl: true,
+            gallery: true,
+            coverPhoto: true,
+            coverVideo: true,
+            teaserVideo: true,
           }
         }
       }
@@ -51,7 +62,7 @@ export const getGuestPublic = async (req, res) => {
 
 // Criar novo convidado
 export const createGuest = async (req, res) => {
-  const { partyId, name, phone, companions, status, whatsappInvite } = req.body;
+  const { partyId, name, phone, companions, status, whatsappInvite, email, tableNumber, sector } = req.body;
 
   try {
     if (!partyId || !name || !phone) {
@@ -75,6 +86,9 @@ export const createGuest = async (req, res) => {
         companions: parseInt(companions) || 0,
         status: status || 'pending',
         whatsappInvite: !!whatsappInvite,
+        email: email || null,
+        tableNumber: tableNumber || null,
+        sector: sector || null
       }
     });
 
@@ -88,7 +102,7 @@ export const createGuest = async (req, res) => {
 // Atualizar convidado (Administrativo)
 export const updateGuest = async (req, res) => {
   const { id } = req.params;
-  const { name, phone, companions, status, whatsappInvite } = req.body;
+  const { name, phone, companions, status, whatsappInvite, email, tableNumber, sector } = req.body;
 
   try {
     // Verifica propriedade do convidado através da festa
@@ -108,6 +122,9 @@ export const updateGuest = async (req, res) => {
         companions: companions !== undefined ? parseInt(companions) : undefined,
         status,
         whatsappInvite: whatsappInvite !== undefined ? !!whatsappInvite : undefined,
+        email: email !== undefined ? email : undefined,
+        tableNumber: tableNumber !== undefined ? tableNumber : undefined,
+        sector: sector !== undefined ? sector : undefined
       }
     });
 
@@ -145,7 +162,15 @@ export const deleteGuest = async (req, res) => {
 // RSVP Público (Convidado confirma presença sem estar logado)
 export const rsvpResponse = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // 'confirmed' ou 'declined'
+  const { 
+    status, 
+    companionNames,
+    email,
+    dietaryRestrictions,
+    favoriteSong,
+    photoUrl,
+    messageToHost
+  } = req.body; // 'confirmed' ou 'declined' + novos dados ricos do RSVP
 
   try {
     if (!status || !['confirmed', 'declined'].includes(status)) {
@@ -160,9 +185,25 @@ export const rsvpResponse = async (req, res) => {
       return res.status(404).json({ error: 'Convidado não encontrado' });
     }
 
+    const updateData = { 
+      status,
+      email: email || undefined,
+      favoriteSong: favoriteSong || undefined,
+      photoUrl: photoUrl || undefined,
+      messageToHost: messageToHost || undefined
+    };
+    
+    if (status === 'confirmed' && Array.isArray(companionNames)) {
+      updateData.companionNames = companionNames.filter(n => n && n.trim());
+    }
+    
+    if (Array.isArray(dietaryRestrictions)) {
+      updateData.dietaryRestrictions = dietaryRestrictions;
+    }
+
     const updatedGuest = await prisma.guest.update({
       where: { id },
-      data: { status }
+      data: updateData
     });
 
     res.json({
@@ -170,12 +211,73 @@ export const rsvpResponse = async (req, res) => {
       guest: {
         id: updatedGuest.id,
         name: updatedGuest.name,
-        status: updatedGuest.status
+        status: updatedGuest.status,
+        companionNames: updatedGuest.companionNames,
+        email: updatedGuest.email,
+        dietaryRestrictions: updatedGuest.dietaryRestrictions,
+        favoriteSong: updatedGuest.favoriteSong,
+        photoUrl: updatedGuest.photoUrl,
+        messageToHost: updatedGuest.messageToHost,
+        tableNumber: updatedGuest.tableNumber,
+        sector: updatedGuest.sector
       }
     });
   } catch (error) {
     console.error('Erro ao responder RSVP público:', error);
     res.status(500).json({ error: 'Erro ao responder RSVP' });
+  }
+};
+
+// Check-in de convidado via QR Code (Administrativo)
+export const checkInGuest = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const guest = await prisma.guest.findFirst({
+      where: { id, party: { userId: req.user.id } },
+      include: { party: { select: { name: true } } }
+    });
+
+    if (!guest) {
+      return res.status(404).json({ error: 'Convidado não encontrado ou acesso negado' });
+    }
+
+    if (guest.checkedIn) {
+      return res.status(409).json({
+        error: 'Já registrado',
+        message: `${guest.name} já realizou check-in anteriormente.`,
+        guest: { id: guest.id, name: guest.name, status: guest.status, companionNames: guest.companionNames, checkedIn: guest.checkedIn, checkedInAt: guest.checkedInAt }
+      });
+    }
+
+    if (guest.status !== 'confirmed') {
+      return res.status(400).json({
+        error: 'Não confirmado',
+        message: `${guest.name} não confirmou presença via RSVP.`,
+        guest: { id: guest.id, name: guest.name, status: guest.status }
+      });
+    }
+
+    const updatedGuest = await prisma.guest.update({
+      where: { id },
+      data: { checkedIn: true, checkedInAt: new Date() }
+    });
+
+    res.json({
+      message: 'Check-in realizado com sucesso!',
+      guest: {
+        id: updatedGuest.id,
+        name: updatedGuest.name,
+        status: updatedGuest.status,
+        companions: updatedGuest.companions,
+        companionNames: updatedGuest.companionNames,
+        checkedIn: updatedGuest.checkedIn,
+        checkedInAt: updatedGuest.checkedInAt
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao fazer check-in:', error);
+    res.status(500).json({ error: 'Erro ao processar check-in' });
   }
 };
 

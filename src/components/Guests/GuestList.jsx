@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useGuests } from './GuestContext.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useParty } from '../../contexts/PartyContext.jsx';
+import { ReportPDFGenerator } from '../Reports/ReportPDFGenerator.js';
+import { toast } from 'sonner';
 import GuestForm from './GuestForm.jsx';
 import SendInviteModal from './SendInviteModal.jsx';
 import BulkInviteModal from './BulkInviteModal.jsx';
@@ -22,12 +25,15 @@ import {
   ArrowLeft,
   UserCheck,
   UserX,
-  Phone
+  Phone,
+  FileText,
+  Hash
 } from 'lucide-react';
 
-export default function GuestList({ onBack }) {
+export default function GuestList({ onBack, onGoToSubscription }) {
   const { guests, removeGuest, updateGuest, addGuestsBulk } = useGuests();
   const { user } = useAuth();
+  const { currentParty } = useParty();
 
   const [filter, setFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
@@ -36,6 +42,21 @@ export default function GuestList({ onBack }) {
   const [isAdding, setIsAdding] = useState(false);
   const [isBulkInviteOpen, setIsBulkInviteOpen] = useState(false);
   const [isGateDeskActive, setIsGateDeskActive] = useState(false);
+
+  const handleGeneratePDF = async () => {
+    if (!currentParty) {
+      toast.error('Nenhuma festa ativa para gerar o relatório.');
+      return;
+    }
+    toast.info('Gerando PDF de convidados com QR Codes... Aguarde.');
+    try {
+      await ReportPDFGenerator.generateGuestListPDF(currentParty, guests);
+      toast.success('Relatório PDF baixado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao gerar relatório PDF.');
+    }
+  };
 
   const totalGuests = guests.length;
   const confirmedCount = guests.filter(g => g.status === 'confirmed').length;
@@ -56,7 +77,15 @@ export default function GuestList({ onBack }) {
 
   const handleCsvImportClick = () => {
     if (user?.plan !== 'MASTER' && user?.role !== 'ADMIN') {
-      alert('A importação de convidados via CSV é um recurso exclusivo do Plano MASTER (corporativo). Por favor, realize o upgrade no menu de Assinaturas!');
+      toast.error('Recurso do Plano MASTER', {
+        description: 'A importação de convidados via CSV é um recurso exclusivo do Plano MASTER (corporativo).',
+        action: {
+          label: 'Fazer Upgrade',
+          onClick: () => onGoToSubscription && onGoToSubscription()
+        },
+        duration: 8000,
+        position: 'top-center'
+      });
       return;
     }
     document.getElementById('csv-file-input').click();
@@ -64,7 +93,15 @@ export default function GuestList({ onBack }) {
 
   const handleGateDeskClick = () => {
     if (user?.plan !== 'MASTER' && user?.role !== 'ADMIN') {
-      alert('O Modo Portaria (Gate Desk) é um recurso exclusivo do Plano MASTER (corporativo). Por favor, realize o upgrade no menu de Assinaturas!');
+      toast.error('Recurso do Plano MASTER', {
+        description: 'O Modo Portaria (Gate Desk) é um recurso exclusivo do Plano MASTER (corporativo).',
+        action: {
+          label: 'Fazer Upgrade',
+          onClick: () => onGoToSubscription && onGoToSubscription()
+        },
+        duration: 8000,
+        position: 'top-center'
+      });
       return;
     }
     setIsGateDeskActive(true);
@@ -110,17 +147,27 @@ export default function GuestList({ onBack }) {
       }
 
       if (importedGuests.length === 0) {
-        alert('Nenhum convidado válido encontrado no arquivo CSV. Certifique-se de que o arquivo está no formato correto: Nome, Telefone, Acompanhantes.');
+        toast.error('Nenhum convidado encontrado', {
+          description: 'Certifique-se de que o arquivo está no formato correto: Nome, Telefone, Acompanhantes.',
+          position: 'top-center',
+          duration: 5000
+        });
         return;
       }
 
       if (confirm(`Deseja realmente importar ${importedGuests.length} convidados do arquivo CSV?`)) {
         try {
           await addGuestsBulk(importedGuests);
-          alert(`${importedGuests.length} convidados importados com sucesso!`);
+          toast.success('Importação bem sucedida', {
+            description: `${importedGuests.length} convidados importados com sucesso! 🎉`,
+            position: 'top-center'
+          });
         } catch (error) {
           console.error(error);
-          alert(error.message || 'Erro ao importar convidados. Tente novamente.');
+          toast.error('Erro ao importar', {
+            description: error.message || 'Erro ao importar convidados. Tente novamente.',
+            position: 'top-center'
+          });
         }
       }
     };
@@ -145,8 +192,21 @@ export default function GuestList({ onBack }) {
     });
   };
 
+  if (isGateDeskActive) {
+    return <GateDesk onBack={() => setIsGateDeskActive(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 max-w-5xl mx-auto space-y-6 transition-colors duration-300">
+      {/* Input oculto para importação CSV */}
+      <input
+        type="file"
+        id="csv-file-input"
+        accept=".csv"
+        className="hidden"
+        onChange={handleCsvFileChange}
+      />
+
       {/* Modal de edição */}
       {editingGuest && (
         <GuestForm
@@ -204,10 +264,32 @@ export default function GuestList({ onBack }) {
             Voltar
           </Button>
 
+          {/* Importar CSV */}
+          <Button variant="outline" onClick={handleCsvImportClick} className="rounded-xl px-4 py-5 shadow-sm font-semibold border-border/80 hover:bg-muted flex items-center gap-1.5">
+            <Upload size={16} />
+            <span>Importar CSV</span>
+          </Button>
+
+          {/* Portaria */}
+          <Button variant="outline" onClick={handleGateDeskClick} className="rounded-xl px-4 py-5 shadow-sm font-semibold border-border/80 hover:bg-muted flex items-center gap-1.5">
+            <CheckSquare size={16} />
+            <span>Portaria (Gate)</span>
+          </Button>
+
           {/* Adicionar */}
           <Button onClick={() => setIsAdding(true)} className="rounded-xl px-4 py-5 bg-primary text-primary-foreground font-semibold flex items-center gap-1.5 shadow-md shadow-primary/10">
             <Plus size={18} />
             <span>Adicionar</span>
+          </Button>
+
+          {/* Gerar PDF */}
+          <Button
+            variant="outline"
+            onClick={handleGeneratePDF}
+            className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-sm border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 animate-pulse-custom"
+          >
+            <FileText size={16} />
+            <span>Gerar PDF</span>
           </Button>
 
           {/* Convidar Todos */}
@@ -233,20 +315,20 @@ export default function GuestList({ onBack }) {
 
       {/* Filtros */}
       <Tabs value={filter} onValueChange={setFilter} className="w-full">
-        <TabsList className="flex w-full md:w-auto md:inline-flex rounded-xl p-1 bg-muted/60 border">
-          <TabsTrigger value="all" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 font-semibold text-xs transition-all">
+        <TabsList className="flex w-full md:w-auto md:inline-flex rounded-xl p-1 bg-muted/60 border font-semibold">
+          <TabsTrigger value="all" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
             <Users size={14} />
             <span>Todos</span>
           </TabsTrigger>
-          <TabsTrigger value="pending" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 font-semibold text-xs transition-all">
+          <TabsTrigger value="pending" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
             <Clock size={14} className="text-amber-500" />
             <span>Pendentes</span>
           </TabsTrigger>
-          <TabsTrigger value="confirmed" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 font-semibold text-xs transition-all">
+          <TabsTrigger value="confirmed" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
             <CheckCircle2 size={14} className="text-emerald-500" />
             <span>Confirmados</span>
           </TabsTrigger>
-          <TabsTrigger value="declined" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 font-semibold text-xs transition-all">
+          <TabsTrigger value="declined" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
             <XCircle size={14} className="text-rose-500" />
             <span>Recusados</span>
           </TabsTrigger>
@@ -256,7 +338,7 @@ export default function GuestList({ onBack }) {
       {/* Lista de convidados */}
       {filteredGuests.length === 0 ? (
         <div className="border border-dashed p-16 text-center rounded-3xl shadow-sm bg-card/20">
-          <Users className="mx-auto text-zinc-300 dark:text-zinc-700 h-16 w-16 mb-4 animate-pulse-custom" />
+          <Users className="mx-auto text-zinc-300 dark:text-zinc-700 h-16 w-16 mb-4" />
           <h3 className="text-lg font-bold text-foreground/80">Nenhum convidado nesta categoria</h3>
           <p className="text-sm text-muted-foreground mt-1.5">Comece adicionando novos nomes à sua lista de comemoração.</p>
         </div>
@@ -284,6 +366,17 @@ export default function GuestList({ onBack }) {
                         +{guest.accompany} Acomp.
                       </span>
                     )}
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(guest.id);
+                        toast.success('ID do convidado copiado!');
+                      }}
+                      className="text-[9px] font-mono bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-all"
+                      title="Clique para copiar o ID do convidado"
+                    >
+                      ID: {guest.id}
+                    </span>
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted-foreground">
@@ -291,6 +384,20 @@ export default function GuestList({ onBack }) {
                       <Phone size={12} />
                       {guest.phone}
                     </span>
+                    {guest.email && (
+                      <span className="flex items-center gap-1">
+                        <Mail size={12} />
+                        {guest.email}
+                      </span>
+                    )}
+                    {(guest.tableNumber || guest.sector) && (
+                      <span className="flex items-center gap-1 text-primary">
+                        <Hash size={12} />
+                        {guest.tableNumber ? `Mesa ${guest.tableNumber}` : ''}
+                        {guest.tableNumber && guest.sector ? ' • ' : ''}
+                        {guest.sector ? `Setor ${guest.sector}` : ''}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       {guest.status === 'confirmed' ? (
                         <span className="flex items-center gap-1 text-emerald-500 font-bold">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PartyProvider, useParty } from './contexts/PartyContext';
 import { GuestProvider } from './components/Guests/GuestContext';
@@ -11,7 +11,9 @@ import PartyDetailsScreen from './components/PartyDetailsScreen';
 import GuestList from './components/Guests/GuestList';
 import TaskList from './components/Task/TaskList';
 import RSVPPage from './components/Guests/RSVPPage';
+import CheckInScreen from './components/CheckInScreen';
 import SubscriptionScreen from './components/SubscriptionScreen';
+import { Toaster } from './components/ui/sonner';
 import SupplierPortalScreen from './components/SupplierPortalScreen';
 import SupplierSearchScreen from './components/SupplierSearchScreen';
 import ConsumoCalculator from './components/ConsumoCalculator';
@@ -31,11 +33,13 @@ import {
   MessageCircle,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  QrCode
 } from 'lucide-react';
 import ChatModule from './components/ChatModule';
 import AnimatedLogo from './components/AnimatedLogo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+import { toast } from 'sonner';
 import './App.css';
 
 function AppContent() {
@@ -45,6 +49,21 @@ function AppContent() {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [selectedPartyId, setSelectedPartyId] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const location = useLocation();
+  const isRsvpPage = location.pathname.startsWith('/rsvp/');
+
+  if (isRsvpPage) {
+    return (
+      <GuestProvider>
+        <div className="min-h-screen bg-[#0c0d12] transition-colors duration-300">
+          <Routes>
+            <Route path="/rsvp/:id" element={<RSVPPage />} />
+          </Routes>
+        </div>
+      </GuestProvider>
+    );
+  }
 
   // Roteamento baseado em Role ao carregar ou autenticar
   useEffect(() => {
@@ -66,6 +85,33 @@ function AppContent() {
   };
 
   const handleCreateParty = () => {
+    if (user?.role !== 'ADMIN') {
+      const plan = user?.plan || 'FREE';
+      if (plan === 'FREE' && parties.length >= 1) {
+        toast.error('Limite de Festas Atingido', {
+          description: 'O plano Básico/Free permite apenas 1 festa ativa. Faça upgrade para criar mais!',
+          action: {
+            label: 'Upgrade',
+            onClick: () => setCurrentScreen('subscription')
+          },
+          duration: 6000,
+          position: 'top-center'
+        });
+        return;
+      }
+      if (plan === 'PREMIUM' && parties.length >= 5) {
+        toast.error('Limite de Festas Atingido', {
+          description: 'O plano Premium permite até 5 festas ativas. Faça upgrade para o plano Master para festas ilimitadas!',
+          action: {
+            label: 'Upgrade',
+            onClick: () => setCurrentScreen('subscription')
+          },
+          duration: 6000,
+          position: 'top-center'
+        });
+        return;
+      }
+    }
     setSelectedPartyId(null);
     setCurrentScreen('party-details');
   };
@@ -81,23 +127,61 @@ function AppContent() {
   };
 
   const handleQuickAction = (action) => {
+    const isFree = (user?.plan === 'FREE' || !user?.plan) && user?.role !== 'ADMIN';
+
     switch (action) {
       case 'guests':
         setCurrentScreen('guests');
         break;
       case 'consumption':
+        if (isFree) {
+          toast.error('Recurso Premium', {
+            description: 'A Calculadora de Consumo é exclusiva dos planos Premium e Master.',
+            action: {
+              label: 'Fazer Upgrade',
+              onClick: () => setCurrentScreen('subscription')
+            },
+            duration: 6000,
+            position: 'top-center'
+          });
+          return;
+        }
         setCurrentScreen('consumption');
         break;
       case 'checklist':
         setCurrentScreen('checklist');
         break;
       case 'finance':
+        if (isFree) {
+          toast.error('Recurso Premium', {
+            description: 'O controle financeiro avançado é exclusivo dos planos Premium e Master.',
+            action: {
+              label: 'Fazer Upgrade',
+              onClick: () => setCurrentScreen('subscription')
+            },
+            duration: 6000,
+            position: 'top-center'
+          });
+          return;
+        }
         setCurrentScreen('finance');
         break;
       case 'suppliers':
         if (user?.role === 'SUPPLIER') {
           setCurrentScreen('supplier-portal');
         } else {
+          if (isFree) {
+            toast.error('Recurso Premium', {
+              description: 'A busca de fornecedores parceiros é exclusiva dos planos Premium e Master.',
+              action: {
+                label: 'Fazer Upgrade',
+                onClick: () => setCurrentScreen('subscription')
+              },
+              duration: 6000,
+              position: 'top-center'
+            });
+            return;
+          }
           setCurrentScreen('suppliers');
         }
         break;
@@ -142,6 +226,7 @@ function AppContent() {
       { id: 'checklist', label: 'Tarefas', icon: CheckCircle },
       { id: 'finance', label: 'Finanças', icon: Wallet },
       { id: 'whatsapp', label: 'Convites', icon: MessageCircle },
+      { id: 'checkin', label: 'Check-in', icon: QrCode },
       { id: 'suppliers', label: 'Serviços', icon: Briefcase }
     ];
 
@@ -152,6 +237,7 @@ function AppContent() {
     if (currentScreen === 'checklist') return 'checklist';
     if (currentScreen === 'finance') return 'finance';
     if (currentScreen === 'whatsapp') return 'whatsapp';
+    if (currentScreen === 'checkin') return 'checkin';
     if (currentScreen === 'suppliers' || currentScreen === 'supplier-portal') return 'suppliers';
     return 'home';
   };
@@ -159,6 +245,9 @@ function AppContent() {
   const activeTab = getActiveTab();
 
   const handleTabClick = (tabId) => {
+    const isFree = (user?.plan === 'FREE' || !user?.plan) && user?.role !== 'ADMIN';
+    const isNotMaster = user?.plan !== 'MASTER' && user?.role !== 'ADMIN';
+
     if (tabId === 'home') {
       setCurrentScreen('home');
       setSelectedPartyId(null);
@@ -169,13 +258,51 @@ function AppContent() {
     } else if (tabId === 'checklist') {
       setCurrentScreen('checklist');
     } else if (tabId === 'finance') {
+      if (isFree) {
+        toast.error('Recurso Premium', {
+          description: 'O controle financeiro avançado é exclusivo dos planos Premium e Master.',
+          action: {
+            label: 'Fazer Upgrade',
+            onClick: () => setCurrentScreen('subscription')
+          },
+          duration: 6000,
+          position: 'top-center'
+        });
+        return;
+      }
       setCurrentScreen('finance');
     } else if (tabId === 'whatsapp') {
       setCurrentScreen('whatsapp');
+    } else if (tabId === 'checkin') {
+      if (isNotMaster) {
+        toast.error('Recurso do Plano MASTER', {
+          description: 'O Check-in de Portaria (Gate Desk) é um recurso exclusivo do Plano MASTER (corporativo).',
+          action: {
+            label: 'Fazer Upgrade',
+            onClick: () => setCurrentScreen('subscription')
+          },
+          duration: 6000,
+          position: 'top-center'
+        });
+        return;
+      }
+      setCurrentScreen('checkin');
     } else if (tabId === 'suppliers') {
       if (user?.role === 'SUPPLIER') {
         setCurrentScreen('supplier-portal');
       } else {
+        if (isFree) {
+          toast.error('Recurso Premium', {
+            description: 'A busca de fornecedores parceiros é exclusiva dos planos Premium e Master.',
+            action: {
+              label: 'Fazer Upgrade',
+              onClick: () => setCurrentScreen('subscription')
+            },
+            duration: 6000,
+            position: 'top-center'
+          });
+          return;
+        }
         setCurrentScreen('suppliers');
       }
     }
@@ -257,14 +384,22 @@ function AppContent() {
                 {!isSidebarCollapsed && (
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="font-black text-xs truncate uppercase tracking-tight text-foreground">{user?.name || 'Olivia Chen'}</span>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Sparkles size={8} className="text-primary" />
-                      <span className="text-[8px] text-primary font-black uppercase tracking-widest">Premium</span>
-                    </div>
+                    <button
+                      onClick={() => setCurrentScreen('subscription')}
+                      className="flex items-center gap-1 mt-0.5 text-primary hover:opacity-85 transition-opacity bg-transparent border-0 p-0 cursor-pointer text-left w-fit"
+                      title="Gerenciar Assinatura"
+                    >
+                      <Sparkles size={8} className="text-primary shrink-0" />
+                      <span className="text-[8px] font-black uppercase tracking-widest leading-none">Plano {user?.plan || 'FREE'}</span>
+                      <span className="text-[8px] text-muted-foreground leading-none font-bold hover:underline ml-1">(Alterar)</span>
+                    </button>
                   </div>
                 )}
 
                 <div className={`flex items-center gap-1 relative z-10 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+                  <button onClick={() => setCurrentScreen('subscription')} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Assinaturas / Planos">
+                    <Sparkles size={14} className="text-primary animate-pulse" />
+                  </button>
                   <button onClick={toggleTheme} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Tema">
                     {isDarkMode ? <Cake size={14} /> : <Flame size={14} className="text-amber-500" />}
                   </button>
@@ -342,7 +477,7 @@ function AppContent() {
               element={(() => {
                 switch (currentScreen) {
                   case 'guests':
-                    return <GuestList onBack={handleBackToHome} />;
+                    return <GuestList onBack={handleBackToHome} onGoToSubscription={() => setCurrentScreen('subscription')} />;
 
                   case 'party-details':
                     return (
@@ -363,6 +498,9 @@ function AppContent() {
 
                   case 'whatsapp':
                     return <WhatsAppIntegrationScreen onBack={handleBackToHome} />;
+
+                  case 'checkin':
+                    return <CheckInScreen onBack={handleBackToHome} />;
 
                   case 'subscription':
                     return <SubscriptionScreen onBack={handleBackToHome} />;
@@ -449,6 +587,7 @@ export default function App() {
       <AuthProvider>
         <PartyProvider>
           <AppContent />
+          <Toaster />
         </PartyProvider>
       </AuthProvider>
     </ThemeProvider>
