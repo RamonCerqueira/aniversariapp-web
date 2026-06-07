@@ -19,6 +19,8 @@ enum PlanType {
   PREMIUM
   MASTER
   SUPPLIER_MONTHLY
+  SUPPLIER_BASIC
+  SUPPLIER_PREMIUM
 }
 
 model User {

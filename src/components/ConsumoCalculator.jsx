@@ -82,6 +82,28 @@ const PARTY_TYPES = [
     text: 'text-emerald-500',
     desc: 'Buffet, open bar'
   },
+  {
+    id: 'confraternizacao',
+    label: 'Corporativo',
+    emoji: '👔',
+    icon: Users,
+    color: 'from-blue-600 to-indigo-600',
+    bg: 'bg-blue-600/10',
+    border: 'border-blue-600/30',
+    text: 'text-blue-600',
+    desc: 'Confraternizações e eventos corporativos'
+  },
+  {
+    id: 'outro',
+    label: 'Outro / Geral',
+    emoji: '🎉',
+    icon: Sparkles,
+    color: 'from-zinc-500 to-slate-500',
+    bg: 'bg-zinc-500/10',
+    border: 'border-zinc-500/30',
+    text: 'text-zinc-500',
+    desc: 'Reuniões, jantares e eventos gerais'
+  }
 ];
 
 // ─── Cálculos por tipo ─────────────────────────────────────────────────────────
@@ -201,9 +223,25 @@ function calcFesta(guests, tipo) {
         { label: 'Bolo de formatura', qty: `${Math.ceil(total / 25)} andares` },
       ]
     },
+    confraternizacao: {
+      itensPorPessoa: [
+        { label: 'Mini sanduíches / Sliders', qty: `${Math.ceil(total * 3)} un` },
+        { label: 'Canapés e salgadinhos finos', qty: `${Math.ceil(total * 10)} un` },
+        { label: 'Tábua de Frios (queijos, salames, etc.)', qty: `${total * 80}g total` },
+        { label: 'Doces finos / Sobremesas individuais', qty: `${Math.ceil(total * 4)} un` },
+      ]
+    },
+    outro: {
+      itensPorPessoa: [
+        { label: 'Salgados tradicionais (fritos e assados)', qty: `${Math.ceil(total * 12)} un` },
+        { label: 'Docinhos de festa', qty: `${Math.ceil(total * 6)} un` },
+        { label: 'Tábua de Frios & Petiscos', qty: `${total * 60}g total` },
+        { label: 'Bolo / Sobremesa', qty: `${Math.ceil(total * 1)} fatia/porção` },
+      ]
+    }
   };
 
-  const cfg = configs[tipo] || configs.aniversario;
+  const cfg = configs[tipo] || configs.outro;
   return {
     sections: [
       {
@@ -214,20 +252,83 @@ function calcFesta(guests, tipo) {
   };
 }
 
+// ─── Recommended Suppliers Widget ──────────────────────────────────────────────
+const RecommendedSuppliersWidget = ({ suppliers, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="mt-8 p-5 rounded-3xl border border-amber-500/20 bg-amber-500/5 animate-pulse flex items-center justify-center">
+        <Loader2 className="animate-spin text-amber-500 w-5 h-5 mr-2" />
+        <span className="text-xs font-bold text-muted-foreground">Carregando parceiros recomendados Celebrate...</span>
+      </div>
+    );
+  }
+  if (!suppliers || suppliers.length === 0) return null;
+
+  return (
+    <div className="mt-8 space-y-3.5 border-t border-border/20 pt-6">
+      <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
+        <Sparkles size={12} className="fill-amber-500/20 text-amber-500" /> Parceiros Ouro Celebrate Recomendados
+      </h5>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {suppliers.map(s => (
+          <div key={s.id} className="flex items-center gap-3.5 p-3.5 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.03] border border-amber-500/15 rounded-2xl hover:shadow-md hover:border-amber-500/30 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-500/20 to-transparent px-2.5 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-wider text-amber-600 flex items-center gap-1">
+              <Sparkles size={8} className="fill-amber-500" /> Destaque
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-card border border-border/50 flex items-center justify-center text-lg shrink-0 overflow-hidden shadow-sm">
+              {s.logo ? <img src={s.logo} className="w-full h-full object-cover" alt="Logo" /> : '💼'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-extrabold text-foreground truncate group-hover:text-primary transition-colors">{s.companyName}</p>
+              <p className="text-[9px] text-muted-foreground font-bold mt-0.5">{s.city} · {s.category}</p>
+            </div>
+            <a href={`https://api.whatsapp.com/send?phone=${s.phone}`} target="_blank" rel="noreferrer"
+              className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all duration-300 shrink-0">
+              <Phone size={12} />
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ─── Componente Principal ──────────────────────────────────────────────────────
 export default function ConsumoCalculator({ onBack }) {
   const { currentParty } = useParty();
 
   // Tipo de festa selecionado
-  const [partyType, setPartyType] = useState('churrasco');
+  const [partyType, setPartyType] = useState(() => {
+    if (currentParty?.type) {
+      const typeMap = {
+        'churrasco': 'churrasco',
+        'festa_infantil': 'infantil',
+        'festa_adulto': 'aniversario',
+        'festa_tematica': 'outro',
+        'confraternizacao': 'confraternizacao',
+        'outro': 'outro'
+      };
+      return typeMap[currentParty.type] || 'churrasco';
+    }
+    return 'churrasco';
+  });
 
   // Inputs de convidados
-  const [guests, setGuests] = useState({
-    adults: '10',
-    women: '10',
-    children: '5',
-    beerDrinkers: '12',
-    hours: '4',
+  const [guests, setGuests] = useState(() => {
+    const total = currentParty?.guestCount || 25;
+    const childrenCount = Math.round(total * 0.2);
+    const remaining = total - childrenCount;
+    const adultsCount = Math.round(remaining * 0.5);
+    const womenCount = remaining - adultsCount;
+    const beerDrinkersCount = Math.round((adultsCount + womenCount) * 0.6);
+
+    return {
+      adults: String(adultsCount || 10),
+      women: String(womenCount || 10),
+      children: String(childrenCount || 5),
+      beerDrinkers: String(beerDrinkersCount || 12),
+      hours: '4',
+    };
   });
 
   // Resultados
@@ -252,6 +353,40 @@ export default function ConsumoCalculator({ onBack }) {
   };
   const totalGuests = g.adults + g.women + g.children;
 
+  const getCategoryForPartyType = (type) => {
+    switch (type) {
+      case 'churrasco':
+      case 'confraternizacao':
+      case 'aniversario':
+      case 'casamento':
+      case 'debutante':
+      case 'infantil':
+      case 'formatura':
+      default:
+        return 'Buffet';
+    }
+  };
+
+  const fetchSuggestedSuppliers = async (type = partyType) => {
+    setIsLoadingSuppliers(true);
+    try {
+      const category = getCategoryForPartyType(type);
+      const data = await api.suppliers.getAll({ recommendOnly: 'true', category });
+      setNearbySuppliers(data.slice(0, 4));
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => {}
+        );
+      }
+    } catch (err) {
+      console.error('Erro ao buscar fornecedores sugeridos:', err);
+    } finally {
+      setIsLoadingSuppliers(false);
+    }
+  };
+
   const handleCalculate = (e) => {
     e.preventDefault();
     if (totalGuests === 0) {
@@ -271,6 +406,9 @@ export default function ConsumoCalculator({ onBack }) {
     setAiAdvice(null);
     setActiveTab('food');
     toast.success(`Calculado para ${totalGuests} pessoas! 🎉`);
+    
+    // Background fetch Ouro suppliers
+    fetchSuggestedSuppliers(partyType);
   };
 
   // IA Advice (apenas para churrasco)
@@ -351,9 +489,10 @@ export default function ConsumoCalculator({ onBack }) {
   return (
     <div className="min-h-screen bg-background pb-24 transition-colors duration-300 relative overflow-hidden">
 
-      {/* Orbs decorativos */}
-      <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full bg-primary/10 blur-[80px] pointer-events-none z-0" />
-      <div className="absolute bottom-[10%] right-[-10%] w-[250px] md:w-[400px] h-[250px] md:h-[400px] rounded-full bg-secondary/10 blur-[80px] pointer-events-none z-0" />
+      {/* Mesh aurorais e orbs Celebrate Premium */}
+      <div className="absolute top-[-10%] right-[-10%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-amber-500/15 to-primary/5 blur-[100px] pointer-events-none z-0" />
+      <div className="absolute top-[30%] left-[-15%] w-[350px] h-[350px] rounded-full bg-gradient-to-tr from-secondary/10 to-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-[5%] right-[-10%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-primary/10 to-secondary/5 blur-[100px] pointer-events-none z-0" />
 
       {/* ── HEADER ── */}
       <div className="relative z-10 pt-8 pb-8 px-4 md:px-6 border-b border-border/40">
@@ -393,7 +532,7 @@ export default function ConsumoCalculator({ onBack }) {
         {/* ── SELETOR DE TIPO DE FESTA ── */}
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Tipo de Evento</p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {PARTY_TYPES.map(type => {
               const Icon = type.icon;
               const active = partyType === type.id;
@@ -558,7 +697,7 @@ export default function ConsumoCalculator({ onBack }) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Card className="shadow-xl border border-border/40 bg-card/85 backdrop-blur-md rounded-3xl overflow-hidden">
+                  <Card className="shadow-2xl shadow-primary/5 border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.03] via-card/90 to-primary/[0.03] backdrop-blur-xl rounded-3xl overflow-hidden">
                     {/* Header do painel */}
                     <div className={`h-1.5 bg-gradient-to-r ${selectedType.color}`} />
                     <div className="p-5 sm:p-6 border-b border-border/20">
@@ -613,14 +752,25 @@ export default function ConsumoCalculator({ onBack }) {
                                 </h4>
                                 <div className="space-y-1.5">
                                   {section.items.map((item, ii) => (
-                                    <div key={ii} className={`flex justify-between items-center px-4 py-3 rounded-xl border border-border/10 transition-all hover:border-border/40 ${item.bold ? 'bg-primary/5 border-primary/20' : 'bg-muted/25'}`}>
-                                      <span className={`text-xs font-semibold text-foreground/90 ${item.bold ? 'font-extrabold' : ''}`}>{item.label}</span>
-                                      <span className={`text-xs font-black px-3 py-1 rounded-full shrink-0 ml-2 ${item.bold ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground border border-border/20'}`}>{item.qty}</span>
+                                    <div key={ii} className={`flex justify-between items-center px-4 py-3.5 rounded-2xl border transition-all duration-300 hover:scale-[1.01] ${
+                                      item.bold 
+                                        ? 'bg-gradient-to-r from-primary/10 to-secondary/5 border-primary/25 shadow-sm shadow-primary/5' 
+                                        : 'bg-muted/30 border-border/40 hover:border-border'
+                                    }`}>
+                                      <span className={`text-xs font-bold text-foreground/90 ${item.bold ? 'font-black text-primary' : ''}`}>{item.label}</span>
+                                      <span className={`text-xs font-black px-3.5 py-1.5 rounded-xl shrink-0 ml-2 shadow-inner ${
+                                        item.bold 
+                                          ? 'bg-primary text-primary-foreground' 
+                                          : 'bg-background border border-border/40 text-foreground'
+                                      }`}>{item.qty}</span>
                                     </div>
                                   ))}
                                 </div>
                               </div>
                             ))}
+
+                            {/* Parceiros Recomendados Ouro */}
+                            <RecommendedSuppliersWidget suppliers={nearbySuppliers} isLoading={isLoadingSuppliers} />
                           </motion.div>
                         )}
 
@@ -635,9 +785,9 @@ export default function ConsumoCalculator({ onBack }) {
                                 </h4>
                                 <div className="space-y-1.5">
                                   {section.items.map((item, ii) => (
-                                    <div key={ii} className="flex justify-between items-center px-4 py-3 rounded-xl bg-muted/25 border border-border/10 hover:border-border/40 transition-all">
-                                      <span className="text-xs font-semibold text-foreground/90">{item.label}</span>
-                                      <span className="text-xs font-black bg-muted px-3 py-1 rounded-full border border-border/20 shrink-0 ml-2">{item.qty}</span>
+                                    <div key={ii} className="flex justify-between items-center px-4 py-3.5 rounded-2xl bg-muted/30 border border-border/40 hover:border-border hover:scale-[1.01] transition-all duration-300">
+                                      <span className="text-xs font-bold text-foreground/90">{item.label}</span>
+                                      <span className="text-xs font-black bg-background px-3.5 py-1.5 rounded-xl border border-border/40 shrink-0 ml-2 shadow-inner">{item.qty}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -654,6 +804,9 @@ export default function ConsumoCalculator({ onBack }) {
                                 </p>
                               </div>
                             </div>
+
+                            {/* Parceiros Recomendados Ouro */}
+                            <RecommendedSuppliersWidget suppliers={nearbySuppliers} isLoading={isLoadingSuppliers} />
                           </motion.div>
                         )}
 
@@ -756,34 +909,50 @@ export default function ConsumoCalculator({ onBack }) {
                             ) : nearbySuppliers.length === 0 ? (
                               <div className="text-center py-10 space-y-4">
                                 <div className="text-4xl">📍</div>
-                                <p className="text-sm font-bold text-muted-foreground">Clique em "Fornecedores" para buscar.</p>
+                                <p className="text-sm font-bold text-muted-foreground">Nenhum fornecedor carregado ainda.</p>
                                 <Button onClick={handleFindSuppliers} className="rounded-xl px-5 py-3 text-xs font-black">
                                   <Navigation size={14} className="mr-2" /> Buscar Próximos
                                 </Button>
                               </div>
                             ) : (
-                              <div className="space-y-3">
-                                {nearbySuppliers.map(s => (
-                                  <div key={s.id} className="flex items-start gap-4 p-4 bg-card border border-border/50 rounded-2xl hover:shadow-md hover:border-primary/20 transition-all group">
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                                      <ShoppingBag size={16} />
+                              <div className="space-y-3.5">
+                                {nearbySuppliers.map(s => {
+                                  const isPremium = s.user?.plan === 'SUPPLIER_PREMIUM';
+                                  return (
+                                    <div key={s.id} className={`flex items-start gap-4 p-4 rounded-2xl hover:shadow-md transition-all duration-300 group relative overflow-hidden border ${
+                                      isPremium 
+                                        ? 'bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02] border-amber-500/25' 
+                                        : 'bg-card border-border/50 hover:border-primary/20'
+                                    }`}>
+                                      {isPremium && (
+                                        <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-500/20 to-transparent px-2.5 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-wider text-amber-600 flex items-center gap-1">
+                                          <Sparkles size={8} className="fill-amber-500 text-amber-500" /> Parceiro Ouro
+                                        </div>
+                                      )}
+                                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden shadow-sm ${
+                                        isPremium ? 'bg-card border-amber-500/20' : 'bg-primary/5 border-primary/15 text-primary'
+                                      }`}>
+                                        {s.logo ? <img src={s.logo} className="w-full h-full object-cover" alt="Logo" /> : <ShoppingBag size={18} />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-black text-foreground truncate group-hover:text-primary transition-colors flex items-center gap-1.5">
+                                          {s.companyName}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 mt-0.5">
+                                          <MapPin size={10} /> {s.city} · {s.category}
+                                        </p>
+                                        <p className="text-[11px] text-foreground/75 mt-1.5 line-clamp-2 leading-relaxed font-medium">{s.description}</p>
+                                      </div>
+                                      <a href={`https://api.whatsapp.com/send?phone=${s.phone}`} target="_blank" rel="noreferrer"
+                                        className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all duration-300 shrink-0 self-center">
+                                        <Phone size={13} />
+                                      </a>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-extrabold text-foreground truncate group-hover:text-primary transition-colors">{s.companyName}</p>
-                                      <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 mt-0.5">
-                                        <MapPin size={10} /> {s.city} · {s.category}
-                                      </p>
-                                      <p className="text-[10px] text-foreground/70 mt-1 line-clamp-2 leading-relaxed">{s.description}</p>
-                                    </div>
-                                    <a href={`https://api.whatsapp.com/send?phone=${s.phone}`} target="_blank" rel="noreferrer"
-                                      className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shrink-0">
-                                      <Phone size={13} />
-                                    </a>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                                 <button
                                   onClick={() => toast.info('Acesse "Serviços" na navegação para ver todos os fornecedores.')}
-                                  className="w-full text-center text-xs font-black text-primary py-2 flex items-center justify-center gap-1 hover:opacity-70 transition-opacity"
+                                  className="w-full text-center text-xs font-black text-primary py-2.5 flex items-center justify-center gap-1 hover:opacity-70 transition-opacity"
                                 >
                                   Ver todos os fornecedores <ChevronRight size={14} />
                                 </button>

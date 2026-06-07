@@ -228,7 +228,7 @@ export default function SupplierPortalScreen({ onBack, onLogout }) {
       });
 
       setProfile(savedProfile);
-      updateUser({ role: 'SUPPLIER', plan: 'SUPPLIER_MONTHLY' });
+      updateUser({ role: 'SUPPLIER' });
       toast.success('Perfil atualizado com sucesso! 💼', { position: 'top-center' });
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
@@ -612,7 +612,7 @@ export default function SupplierPortalScreen({ onBack, onLogout }) {
           )}
 
           {activeTab === 'precos' && (
-            <SupplierPricingTab form={form} setForm={setForm} />
+            <SupplierPricingTab form={form} setForm={setForm} plan={user?.plan} />
           )}
 
           {activeTab === 'avaliacoes' && (

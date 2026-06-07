@@ -2,7 +2,7 @@ import { prisma } from '../server.js';
 
 // Listar todos os fornecedores cadastrados com filtros opcionais (Público/Organizador)
 export const getSuppliers = async (req, res) => {
-  const { category, city, capacity } = req.query;
+  const { category, city, capacity, recommendOnly } = req.query;
 
   try {
     const filters = {};
@@ -26,6 +26,12 @@ export const getSuppliers = async (req, res) => {
       }
     }
 
+    if (recommendOnly === 'true') {
+      filters.user = {
+        plan: 'SUPPLIER_PREMIUM'
+      };
+    }
+
     const suppliers = await prisma.supplierProfile.findMany({
       where: filters,
       include: {
@@ -33,10 +39,29 @@ export const getSuppliers = async (req, res) => {
           select: {
             name: true,
             email: true,
+            plan: true,
           }
         }
       },
-      orderBy: { companyName: 'asc' },
+    });
+
+    const planOrder = {
+      SUPPLIER_PREMIUM: 1,
+      SUPPLIER_BASIC: 2,
+      SUPPLIER_MONTHLY: 3,
+      FREE: 4
+    };
+
+    suppliers.sort((a, b) => {
+      const planA = a.user?.plan || 'FREE';
+      const planB = b.user?.plan || 'FREE';
+      const orderA = planOrder[planA] || 99;
+      const orderB = planOrder[planB] || 99;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return (a.companyName || '').localeCompare(b.companyName || '');
     });
 
     res.json(suppliers);
@@ -58,6 +83,7 @@ export const getSupplierById = async (req, res) => {
           select: {
             name: true,
             email: true,
+            plan: true,
           }
         }
       }
@@ -99,6 +125,20 @@ export const upsertProfile = async (req, res) => {
   try {
     if (!companyName || !category || !phone || !city || !description) {
       return res.status(400).json({ error: 'Campos obrigatórios ausentes' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+    const userPlan = user?.plan || 'FREE';
+    const servicesList = services || [];
+
+    if (userPlan === 'FREE' && servicesList.length > 0) {
+      return res.status(400).json({ error: 'O plano Grátis não permite produtos/serviços no catálogo. Faça um upgrade para cadastrar itens.' });
+    }
+
+    if (userPlan === 'SUPPLIER_BASIC' && servicesList.length > 1) {
+      return res.status(400).json({ error: 'O plano Essencial permite apenas 1 produto/serviço no catálogo. Faça um upgrade para o plano Ouro para catálogo ilimitado.' });
     }
 
     // Cria ou atualiza o perfil associado ao userId logado
@@ -151,12 +191,11 @@ export const upsertProfile = async (req, res) => {
       }
     });
 
-    // Atualiza a ROLE do usuário para SUPPLIER e o plano para SUPPLIER_MONTHLY de forma automática
+    // Atualiza a ROLE do usuário para SUPPLIER
     await prisma.user.update({
       where: { id: req.user.id },
       data: { 
-        role: 'SUPPLIER',
-        plan: 'SUPPLIER_MONTHLY'
+        role: 'SUPPLIER'
       }
     });
 

@@ -20,11 +20,52 @@ export const createLead = async (req, res) => {
 
     // Valida se o fornecedor existe
     const supplier = await prisma.supplierProfile.findUnique({
-      where: { id: supplierId }
+      where: { id: supplierId },
+      include: {
+        user: { select: { plan: true } }
+      }
     });
 
     if (!supplier) {
       return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    }
+
+    if (supplier.user?.plan === 'FREE') {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const endOfMonth = new Date();
+      endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+      endOfMonth.setDate(0);
+      endOfMonth.setHours(23, 59, 59, 999);
+
+      const leads = await prisma.lead.findMany({
+        where: {
+          supplierId: supplier.id,
+          createdAt: { gte: startOfMonth, lte: endOfMonth }
+        },
+        select: { partyId: true }
+      });
+
+      const chatRooms = await prisma.chatRoom.findMany({
+        where: {
+          supplierId: supplier.id,
+          createdAt: { gte: startOfMonth, lte: endOfMonth }
+        },
+        select: { partyId: true }
+      });
+
+      const uniqueParties = new Set([
+        ...leads.map(l => l.partyId),
+        ...chatRooms.map(c => c.partyId)
+      ]);
+
+      if (!uniqueParties.has(partyId) && uniqueParties.size >= 3) {
+        return res.status(403).json({
+          error: 'Este fornecedor atingiu o limite mensal de contatos do plano Grátis.'
+        });
+      }
     }
 
     // Cria o Lead no banco de dados

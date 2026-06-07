@@ -13,7 +13,9 @@ export default function SubscriptionScreen({ onBack }) {
 
   const currentPlan = user?.plan || 'FREE';
 
-  const plans = [
+  const isSupplier = user?.role === 'SUPPLIER';
+
+  const organizerPlans = [
     {
       id: 'FREE',
       name: 'Free / Básico',
@@ -68,6 +70,73 @@ export default function SubscriptionScreen({ onBack }) {
     }
   ];
 
+  const supplierPlans = [
+    {
+      id: 'FREE',
+      name: 'Grátis',
+      priceMonthly: 'R$ 0,00',
+      priceAnnual: 'R$ 0,00',
+      period: 'para sempre',
+      description: 'Ideal para fornecedores iniciantes que querem testar a plataforma.',
+      features: [
+        'Perfil simples no diretório',
+        'Máximo de 3 leads (contatos) por mês',
+        'Catálogo bloqueado (0 produtos)',
+        'Receba avaliações de clientes'
+      ],
+      icon: Zap,
+      color: 'border-border bg-card/60'
+    },
+    {
+      id: 'SUPPLIER_BASIC',
+      name: 'Essencial / Bronze',
+      priceMonthly: 'R$ 49,90',
+      priceAnnual: 'R$ 39,90',
+      period: 'por mês',
+      description: 'Ótimo para fornecedores ativos que querem começar a vender seus serviços.',
+      features: [
+        'Perfil completo no diretório',
+        'Até 1 produto/serviço no catálogo',
+        'Leads e contatos ilimitados',
+        'Chat integrado com organizadores'
+      ],
+      icon: ShieldCheck,
+      color: 'border-zinc-700 bg-card/60'
+    },
+    {
+      id: 'SUPPLIER_PREMIUM',
+      name: 'Destaque Ouro',
+      priceMonthly: 'R$ 69,90',
+      priceAnnual: 'R$ 55,90',
+      period: 'por mês',
+      description: 'Para quem busca destaque absoluto, exibição automatizada e catálogo ilimitado.',
+      features: [
+        'Exibição no topo das pesquisas',
+        'Sugestão automática na Calculadora',
+        'Catálogo de serviços ilimitado',
+        'Selo de verificação em destaque',
+        'Leads e contatos ilimitados',
+        'Relatórios de visualizações e cliques'
+      ],
+      icon: Sparkles,
+      color: 'border-primary md:ring-4 md:ring-primary/10 shadow-primary/20 md:scale-105 relative z-10',
+      highlighted: true
+    }
+  ];
+
+  const plans = isSupplier ? supplierPlans : organizerPlans;
+
+  const getPlanDisplayName = (plan) => {
+    switch(plan) {
+      case 'PREMIUM': return 'Celebrate Premium';
+      case 'MASTER': return 'Celebrate Master / Pro';
+      case 'SUPPLIER_BASIC': return 'Essencial / Bronze';
+      case 'SUPPLIER_PREMIUM': return 'Destaque Ouro';
+      case 'SUPPLIER_MONTHLY': return 'Fornecedor Mensal (Legado)';
+      default: return 'Celebrate Grátis';
+    }
+  };
+
   const handleUpgrade = async (planId) => {
     if (planId === currentPlan) return;
     setLoadingPlan(planId);
@@ -78,7 +147,6 @@ export default function SubscriptionScreen({ onBack }) {
           description: 'Estamos te redirecionando para a página de pagamento segura do Stripe.',
           position: 'top-center'
         });
-        // Redireciona o usuário para o Checkout do Stripe
         window.location.href = session.url;
       } else {
         throw new Error('URL de checkout do Stripe não foi retornada.');
@@ -88,7 +156,12 @@ export default function SubscriptionScreen({ onBack }) {
       try {
         await subscribeToPlan(planId);
         toast.success('Assinatura Atualizada!', {
-          description: `Seu plano foi atualizado para ${planId === 'MASTER' ? 'Master' : planId === 'PREMIUM' ? 'Premium' : 'Básico'} com sucesso!`,
+          description: `Seu plano foi atualizado para ${
+            planId === 'MASTER' ? 'Master' : 
+            planId === 'PREMIUM' ? 'Premium' : 
+            planId === 'SUPPLIER_PREMIUM' ? 'Destaque Ouro' : 
+            planId === 'SUPPLIER_BASIC' ? 'Essencial' : 'Básico'
+          } com sucesso!`,
           position: 'top-center'
         });
       } catch (subErr) {
@@ -159,7 +232,9 @@ export default function SubscriptionScreen({ onBack }) {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="max-w-xl mx-auto text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed"
           >
-            De pequenas reuniões familiares a mega eventos de gala. Economize tempo de preparo, aumente limites e otimize cada centavo.
+            {isSupplier 
+              ? 'Conecte-se com organizadores de festas na sua região, divulgue seus serviços no catálogo e impulsione suas vendas com nossos planos dedicados.'
+              : 'De pequenas reuniões familiares a mega eventos de gala. Economize tempo de preparo, aumente limites e otimize cada centavo.'}
           </motion.p>
         </div>
       </div>
@@ -176,13 +251,17 @@ export default function SubscriptionScreen({ onBack }) {
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className={`p-4 rounded-2xl ${currentPlan === 'MASTER' ? 'bg-zinc-800 text-amber-400' : 'bg-primary/20 text-primary'}`}>
-                  {currentPlan === 'MASTER' ? <ShieldCheck size={32} /> : <Sparkles size={32} />}
+                <div className={`p-4 rounded-2xl ${
+                  currentPlan === 'MASTER' || currentPlan === 'SUPPLIER_PREMIUM' 
+                    ? 'bg-zinc-800 text-amber-400' 
+                    : 'bg-primary/20 text-primary'
+                }`}>
+                  {currentPlan === 'MASTER' || currentPlan === 'SUPPLIER_PREMIUM' ? <ShieldCheck size={32} /> : <Sparkles size={32} />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-xl font-extrabold text-foreground">
-                      {currentPlan === 'MASTER' ? 'Celebrate Master / Pro' : 'Celebrate Premium'}
+                      {getPlanDisplayName(currentPlan)}
                     </h3>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
                       Assinatura Ativa ✨
@@ -202,23 +281,27 @@ export default function SubscriptionScreen({ onBack }) {
               </div>
             </div>
 
-            {/* Se for plano médio (PREMIUM), oferece o Upgrade */}
-            {currentPlan === 'PREMIUM' && (
+            {/* Se for plano médio (PREMIUM ou SUPPLIER_BASIC), oferece o Upgrade */}
+            {((currentPlan === 'PREMIUM' && !isSupplier) || (currentPlan === 'SUPPLIER_BASIC' && isSupplier)) && (
               <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-primary/10 border border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="space-y-1 text-center md:text-left">
                   <h4 className="text-sm font-extrabold text-amber-500 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
                     <Sparkles size={16} /> UPGRADE DISPONÍVEL
                   </h4>
                   <p className="text-xs text-foreground/80 font-medium max-w-xl">
-                    Eleve o nível dos seus eventos! Migre para o plano <strong>Master / Pro</strong> e obtenha festas ilimitadas, importação de planilhas de convidados, check-in inteligente e suporte prioritário 24/7.
+                    {isSupplier 
+                      ? <span>Eleve o faturamento do seu negócio! Migre para o plano <strong>Destaque Ouro</strong> e apareça automaticamente nas recomendações de bebidas e comidas da calculadora, fique no topo do diretório e tenha catálogo ilimitado.</span>
+                      : <span>Eleve o nível dos seus eventos! Migre para o plano <strong>Master / Pro</strong> e obtenha festas ilimitadas, importação de planilhas de convidados, check-in inteligente e suporte prioritário 24/7.</span>}
                   </p>
                 </div>
                 <Button
-                  onClick={() => handleUpgrade('MASTER')}
+                  onClick={() => handleUpgrade(isSupplier ? 'SUPPLIER_PREMIUM' : 'MASTER')}
                   disabled={loadingPlan !== null}
                   className="bg-gradient-to-r from-amber-500 to-primary hover:from-amber-600 hover:to-primary/95 text-white font-extrabold text-xs py-5 px-6 rounded-xl shadow-lg shadow-amber-500/10 transition-all duration-300 w-full md:w-auto cursor-pointer"
                 >
-                  {loadingPlan === 'MASTER' ? 'Processando...' : 'Fazer Upgrade para Master 🚀'}
+                  {loadingPlan === (isSupplier ? 'SUPPLIER_PREMIUM' : 'MASTER') 
+                    ? 'Processando...' 
+                    : isSupplier ? 'Fazer Upgrade para Ouro 🚀' : 'Fazer Upgrade para Master 🚀'}
                 </Button>
               </div>
             )}
@@ -257,20 +340,23 @@ export default function SubscriptionScreen({ onBack }) {
             // Determinar o destaque dinâmico
             let isHighlighted = plan.highlighted;
             let cardColor = plan.color;
-            let badgeText = plan.highlighted ? "Recomendado Festeiro ✨" : null;
+            let badgeText = plan.highlighted ? (isSupplier ? "Melhor Opção Ouro 🔥" : "Recomendado Festeiro ✨") : null;
 
-            if (currentPlan === 'PREMIUM') {
-              if (plan.id === 'MASTER') {
+            if (currentPlan === 'PREMIUM' || currentPlan === 'SUPPLIER_BASIC') {
+              const targetUpgrade = isSupplier ? 'SUPPLIER_PREMIUM' : 'MASTER';
+              const targetMedium = isSupplier ? 'SUPPLIER_BASIC' : 'PREMIUM';
+              if (plan.id === targetUpgrade) {
                 isHighlighted = true;
                 cardColor = 'border-amber-500/50 md:ring-4 md:ring-amber-500/10 shadow-amber-500/20 md:scale-105 relative z-10';
                 badgeText = 'Upgrade Recomendado ⚡';
-              } else if (plan.id === 'PREMIUM') {
+              } else if (plan.id === targetMedium) {
                 isHighlighted = false;
                 cardColor = 'border-primary bg-primary/5';
                 badgeText = 'Seu Plano Atual 🌟';
               }
-            } else if (currentPlan === 'MASTER') {
-              if (plan.id === 'MASTER') {
+            } else if (currentPlan === 'MASTER' || currentPlan === 'SUPPLIER_PREMIUM') {
+              const targetUpgrade = isSupplier ? 'SUPPLIER_PREMIUM' : 'MASTER';
+              if (plan.id === targetUpgrade) {
                 isHighlighted = true;
                 cardColor = 'border-amber-500 md:ring-4 md:ring-amber-500/10 shadow-amber-500/20 md:scale-105 relative z-10';
                 badgeText = 'Seu Plano Atual 🏆';
@@ -284,17 +370,33 @@ export default function SubscriptionScreen({ onBack }) {
             let buttonText = `Escolher ${plan.name}`;
             if (isCurrent) {
               buttonText = 'Plano Ativo';
-            } else if (currentPlan === 'PREMIUM') {
-              if (plan.id === 'MASTER') {
-                buttonText = 'Upgrade para Master 🚀';
-              } else if (plan.id === 'FREE') {
-                buttonText = 'Downgrade para Básico';
+            } else if (isSupplier) {
+              if (currentPlan === 'SUPPLIER_BASIC') {
+                if (plan.id === 'SUPPLIER_PREMIUM') {
+                  buttonText = 'Upgrade para Ouro 🚀';
+                } else if (plan.id === 'FREE') {
+                  buttonText = 'Mudar para Grátis';
+                }
+              } else if (currentPlan === 'SUPPLIER_PREMIUM') {
+                if (plan.id === 'SUPPLIER_BASIC') {
+                  buttonText = 'Mudar para Essencial';
+                } else if (plan.id === 'FREE') {
+                  buttonText = 'Mudar para Grátis';
+                }
               }
-            } else if (currentPlan === 'MASTER') {
-              if (plan.id === 'PREMIUM') {
-                buttonText = 'Downgrade para Premium';
-              } else if (plan.id === 'FREE') {
-                buttonText = 'Downgrade para Básico';
+            } else {
+              if (currentPlan === 'PREMIUM') {
+                if (plan.id === 'MASTER') {
+                  buttonText = 'Upgrade para Master 🚀';
+                } else if (plan.id === 'FREE') {
+                  buttonText = 'Downgrade para Básico';
+                }
+              } else if (currentPlan === 'MASTER') {
+                if (plan.id === 'PREMIUM') {
+                  buttonText = 'Downgrade para Premium';
+                } else if (plan.id === 'FREE') {
+                  buttonText = 'Downgrade para Básico';
+                }
               }
             }
 

@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Plus, Trash2, Package, Sparkles, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
-export default function SupplierPricingTab({ form, setForm }) {
+export default function SupplierPricingTab({ form, setForm, plan = 'FREE' }) {
 
   const handlePricingChange = (field, value) => {
     // Apenas números
@@ -19,6 +20,23 @@ export default function SupplierPricingTab({ form, setForm }) {
   };
 
   const handleAddPackage = () => {
+    if (plan === 'FREE') {
+      toast.error('Catálogo Bloqueado!', {
+        description: 'O plano Grátis não permite cadastro de serviços. Faça o upgrade para o plano Essencial ou Destaque Ouro.',
+        position: 'top-center'
+      });
+      return;
+    }
+
+    const currentPackages = form.packages || [];
+    if (plan === 'SUPPLIER_BASIC' && currentPackages.length >= 1) {
+      toast.error('Limite de Catálogo Atingido!', {
+        description: 'O plano Essencial permite apenas 1 serviço ativo no catálogo. Faça o upgrade para o plano Destaque Ouro para catálogo ilimitado.',
+        position: 'top-center'
+      });
+      return;
+    }
+
     const newPackage = {
       id: Date.now().toString(),
       name: '',
@@ -28,7 +46,7 @@ export default function SupplierPricingTab({ form, setForm }) {
     };
     setForm({
       ...form,
-      packages: [...(form.packages || []), newPackage]
+      packages: [...currentPackages, newPackage]
     });
   };
 
@@ -119,6 +137,31 @@ export default function SupplierPricingTab({ form, setForm }) {
             <Plus size={16} /> Novo Pacote
           </Button>
         </div>
+
+        {/* Banners Informativos de Limites de Plano */}
+        {plan === 'FREE' && (
+          <Card className="border border-red-500/20 bg-red-500/5 rounded-3xl p-5 flex items-start gap-4">
+            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold text-red-500">Catálogo Desativado no Plano Grátis</h4>
+              <p className="text-xs text-foreground/80 font-medium">
+                Organizadores buscam por fornecedores com cardápios e pacotes definidos. Faça o upgrade da sua assinatura para ativar seu catálogo e começar a divulgar seus preços.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {plan === 'SUPPLIER_BASIC' && (
+          <Card className="border border-amber-500/20 bg-amber-500/5 rounded-3xl p-5 flex items-start gap-4">
+            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold text-amber-500">Limite de 1 serviço no Plano Essencial</h4>
+              <p className="text-xs text-foreground/80 font-medium">
+                Você pode cadastrar apenas 1 serviço ativo. Faça o upgrade para o plano <strong>Destaque Ouro</strong> para cadastrar quantos combos, pacotes ou serviços desejar!
+              </p>
+            </div>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
           <AnimatePresence>

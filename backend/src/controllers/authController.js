@@ -35,7 +35,7 @@ export const register = async (req, res) => {
         password: hashedPassword,
         birthDate: new Date(birthDate),
         role: role || 'ORGANIZER',
-        plan: role === 'SUPPLIER' ? 'SUPPLIER_MONTHLY' : 'FREE',
+        plan: 'FREE',
         ...(role === 'SUPPLIER' && {
           supplierProfile: {
             create: {
@@ -119,8 +119,12 @@ export const subscribe = async (req, res) => {
   const { plan } = req.body;
 
   try {
-    if (!plan || !['FREE', 'PREMIUM', 'MASTER'].includes(plan)) {
-      return res.status(400).json({ error: 'Plano inválido' });
+    const allowedPlans = req.user.role === 'SUPPLIER'
+      ? ['FREE', 'SUPPLIER_BASIC', 'SUPPLIER_PREMIUM']
+      : ['FREE', 'PREMIUM', 'MASTER'];
+
+    if (!plan || !allowedPlans.includes(plan)) {
+      return res.status(400).json({ error: 'Plano inválido para o seu perfil' });
     }
 
     const updatedUser = await prisma.user.update({

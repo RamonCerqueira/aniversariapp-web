@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
@@ -12,17 +12,22 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 
 export default function SplashScreen({ onFinish }) {
   const [phase, setPhase] = useState('show'); // 'show' | 'fadeout'
+  const onFinishRef = useRef(onFinish);
+
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
 
   useEffect(() => {
     // Exibe por 2.2s depois inicia fade-out
     const showTimer = setTimeout(() => setPhase('fadeout'), 2200);
     // Notifica o pai após o fade-out completar (~600ms)
-    const finishTimer = setTimeout(() => onFinish?.(), 2900);
+    const finishTimer = setTimeout(() => onFinishRef.current?.(), 2900);
     return () => {
       clearTimeout(showTimer);
       clearTimeout(finishTimer);
     };
-  }, [onFinish]);
+  }, []);
 
   return (
     <AnimatePresence>
