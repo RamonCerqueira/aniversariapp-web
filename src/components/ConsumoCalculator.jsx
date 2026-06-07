@@ -5,940 +5,819 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { api } from '../services/api.js';
-import { 
-  ArrowLeft, 
-  Flame, 
-  CupSoda, 
-  ShoppingBag, 
-  Beer, 
-  UtensilsCrossed, 
-  Users,
-  Sparkles,
-  ChevronRight,
-  TrendingUp,
-  Scale,
-  Loader2
+import { useParty } from '../contexts/PartyContext.jsx';
+import {
+  ArrowLeft, Flame, CupSoda, ShoppingBag, Beer,
+  UtensilsCrossed, Users, Sparkles, TrendingUp, Scale,
+  Loader2, Cake, Music, Baby, Heart, Star, Wine,
+  MapPin, Phone, ChevronRight, Navigation, Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// ─── Tipos de festa disponíveis ───────────────────────────────────────────────
+const PARTY_TYPES = [
+  {
+    id: 'churrasco',
+    label: 'Churrasco',
+    emoji: '🔥',
+    icon: Flame,
+    color: 'from-orange-500 to-red-500',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-500',
+    desc: 'Costela, picanha, linguiça'
+  },
+  {
+    id: 'aniversario',
+    label: 'Aniversário',
+    emoji: '🎂',
+    icon: Cake,
+    color: 'from-primary to-secondary',
+    bg: 'bg-primary/10',
+    border: 'border-primary/30',
+    text: 'text-primary',
+    desc: 'Bolo, salgados, doces'
+  },
+  {
+    id: 'casamento',
+    label: 'Casamento',
+    emoji: '💍',
+    icon: Heart,
+    color: 'from-rose-400 to-pink-500',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/30',
+    text: 'text-rose-500',
+    desc: 'Buffet completo, mesa de frios'
+  },
+  {
+    id: 'debutante',
+    label: 'Debutante',
+    emoji: '👑',
+    icon: Star,
+    color: 'from-purple-500 to-pink-500',
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-500',
+    desc: 'Mesa de doces, salgados finos'
+  },
+  {
+    id: 'infantil',
+    label: 'Infantil',
+    emoji: '🎈',
+    icon: Baby,
+    color: 'from-sky-400 to-blue-500',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/30',
+    text: 'text-sky-500',
+    desc: 'Docinhos, salgadinhos, bolo'
+  },
+  {
+    id: 'formatura',
+    label: 'Formatura',
+    emoji: '🎓',
+    icon: Music,
+    color: 'from-emerald-500 to-teal-500',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-500',
+    desc: 'Buffet, open bar'
+  },
+];
+
+// ─── Cálculos por tipo ─────────────────────────────────────────────────────────
+function calcChurrasco(guests) {
+  const { adults = 0, women = 0, children = 0, beerDrinkers = 0 } = guests;
+  const totalMeatGrams = adults * 400 + women * 300 + children * 200;
+  const totalMeatKg = totalMeatGrams / 1000;
+  return {
+    sections: [
+      {
+        title: '🥩 Carnes', color: 'text-orange-500', items: [
+          { label: 'Carne Bovina (Picanha, Fraldinha)', qty: `${(totalMeatKg * 0.5).toFixed(1)} kg` },
+          { label: 'Suína / Linguiça Toscana', qty: `${(totalMeatKg * 0.3).toFixed(1)} kg` },
+          { label: 'Frango (Tulipas, Coxinha)', qty: `${(totalMeatKg * 0.2).toFixed(1)} kg` },
+          { label: 'TOTAL DE CARNES', qty: `${totalMeatKg.toFixed(1)} kg`, bold: true },
+        ]
+      },
+      {
+        title: '🪵 Insumos', color: 'text-zinc-400', items: [
+          { label: 'Carvão Vegetal (sacos 5kg)', qty: `${Math.ceil(totalMeatKg / 6)} sacos` },
+          { label: 'Sal Grosso', qty: `${(totalMeatKg * 0.04).toFixed(1)} kg` },
+          { label: 'Pão de Alho (unidades)', qty: `${Math.ceil((adults + women) * 1.2 + children * 0.8)} un` },
+        ]
+      }
+    ]
+  };
+}
+
+function calcBebidas(guests) {
+  const { adults = 0, women = 0, children = 0, beerDrinkers = 0, hours = 4 } = guests;
+  const total = adults + women + children;
+  const h = Math.max(1, hours);
+  const beerLiters = beerDrinkers * 1.5 * (h / 4);
+  const beerCans = Math.ceil((beerLiters * 1000) / 350);
+  const sodaLiters = Math.ceil(total * 0.4 * (h / 4));
+  const waterLiters = Math.ceil(total * 0.3 * (h / 4));
+  const juiceLiters = Math.ceil(children * 0.3 * (h / 4));
+  const iceKg = Math.ceil((beerCans + sodaLiters * 2) / 8);
+  const glassesWine = Math.ceil((adults + women) * 0.5 * (h / 4));
+  return {
+    beerCans, sodaLiters, waterLiters, juiceLiters, iceKg, glassesWine,
+    sections: [
+      {
+        title: '🍺 Bebidas Alcoólicas', color: 'text-amber-500', items: [
+          { label: `Cerveja 350ml (${beerDrinkers} bebem)`, qty: `${beerCans} latas` },
+          { label: 'Vinho (taças aprox.)', qty: `${glassesWine} taças` },
+        ]
+      },
+      {
+        title: '🥤 Não Alcoólicas', color: 'text-sky-400', items: [
+          { label: 'Refrigerante', qty: `${sodaLiters} L` },
+          { label: 'Água Mineral', qty: `${waterLiters} L` },
+          { label: 'Sucos / Néctar (crianças)', qty: `${juiceLiters} L` },
+        ]
+      },
+      {
+        title: '🧊 Logística', color: 'text-blue-400', items: [
+          { label: 'Gelo (sacos 5kg aprox.)', qty: `${iceKg} sacos` },
+          { label: 'Cooler/Caixa Térmica', qty: `${Math.ceil(iceKg / 2)} un` },
+        ]
+      }
+    ]
+  };
+}
+
+function calcFesta(guests, tipo) {
+  const { adults = 0, women = 0, children = 0 } = guests;
+  const total = adults + women + children;
+
+  const configs = {
+    aniversario: {
+      salgados: Math.ceil(total * 15),
+      doces: Math.ceil(total * 10),
+      bolo: `${(total / 20).toFixed(1)} andares`,
+      itensPorPessoa: [
+        { label: 'Salgadinhos (coxinha, quibe, etc.)', qty: `${Math.ceil(total * 15)} un` },
+        { label: 'Docinhos (brigadeiro, beijinho)', qty: `${Math.ceil(total * 10)} un` },
+        { label: 'Bolo de Aniversário', qty: `${Math.ceil(total / 20)} andares` },
+        { label: 'Fatias de bolo/pessoa', qty: '2 fatias p/ pessoa' },
+        { label: 'Mini tortas / quiches', qty: `${Math.ceil(total * 2)} un` },
+      ]
+    },
+    casamento: {
+      itensPorPessoa: [
+        { label: 'Canapés / Finger foods (entrada)', qty: `${Math.ceil(total * 8)} un` },
+        { label: 'Pratos principais (buffet)', qty: `${Math.ceil(total * 1.2)} pratos` },
+        { label: 'Mesa de frios (gramas/pessoa)', qty: `${total * 80}g total` },
+        { label: 'Doces finos (mesa de doces)', qty: `${Math.ceil(total * 8)} un` },
+        { label: 'Bolo de casamento (andares)', qty: `${Math.ceil(total / 30)} andares` },
+        { label: 'Bem casados', qty: `${total} un` },
+      ]
+    },
+    debutante: {
+      itensPorPessoa: [
+        { label: 'Salgadinhos finos', qty: `${Math.ceil(total * 12)} un` },
+        { label: 'Doces finos / Macarons', qty: `${Math.ceil(total * 10)} un` },
+        { label: 'Mesa de Candy Bar', qty: `${Math.ceil(total * 5)} itens` },
+        { label: 'Bolo principal', qty: `${Math.ceil(total / 25)} andares` },
+        { label: 'Mini bolos decorados', qty: `${Math.ceil(total / 5)} un` },
+      ]
+    },
+    infantil: {
+      itensPorPessoa: [
+        { label: 'Salgadinhos (mini)', qty: `${Math.ceil(total * 20)} un` },
+        { label: 'Docinhos (brigadeiro, etc.)', qty: `${Math.ceil(total * 15)} un` },
+        { label: 'Bolo temático', qty: `${Math.ceil(total / 15)} andares` },
+        { label: 'Papelinhos / Cachorro-quente', qty: `${Math.ceil(total * 1.5)} un` },
+        { label: 'Pipoca / Algodão doce', qty: `${Math.ceil(total * 1)} porção` },
+      ]
+    },
+    formatura: {
+      itensPorPessoa: [
+        { label: 'Entradas / Finger foods', qty: `${Math.ceil(total * 10)} un` },
+        { label: 'Pratos quentes (buffet)', qty: `${Math.ceil(total * 1.5)} pratos` },
+        { label: 'Sobremesas variadas', qty: `${Math.ceil(total * 3)} un` },
+        { label: 'Mesa de frios', qty: `${total * 100}g total` },
+        { label: 'Bolo de formatura', qty: `${Math.ceil(total / 25)} andares` },
+      ]
+    },
+  };
+
+  const cfg = configs[tipo] || configs.aniversario;
+  return {
+    sections: [
+      {
+        title: '🍽️ Comidas & Doces', color: 'text-primary',
+        items: cfg.itensPorPessoa
+      }
+    ]
+  };
+}
+
+// ─── Componente Principal ──────────────────────────────────────────────────────
 export default function ConsumoCalculator({ onBack }) {
-  const [inputs, setInputs] = useState({
-    men: '10',
+  const { currentParty } = useParty();
+
+  // Tipo de festa selecionado
+  const [partyType, setPartyType] = useState('churrasco');
+
+  // Inputs de convidados
+  const [guests, setGuests] = useState({
+    adults: '10',
     women: '10',
     children: '5',
     beerDrinkers: '12',
+    hours: '4',
   });
 
+  // Resultados
   const [results, setResults] = useState(null);
+  const [drinkResults, setDrinkResults] = useState(null);
   const [aiAdvice, setAiAdvice] = useState(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('food');
 
-  const calculateConsumo = (e) => {
+  // Fornecedores próximos
+  const [nearbySuppliers, setNearbySuppliers] = useState([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  const g = {
+    adults: parseInt(guests.adults) || 0,
+    women: parseInt(guests.women) || 0,
+    children: parseInt(guests.children) || 0,
+    beerDrinkers: parseInt(guests.beerDrinkers) || 0,
+    hours: parseInt(guests.hours) || 4,
+  };
+  const totalGuests = g.adults + g.women + g.children;
+
+  const handleCalculate = (e) => {
     e.preventDefault();
-    const m = parseInt(inputs.men) || 0;
-    const w = parseInt(inputs.women) || 0;
-    const c = parseInt(inputs.children) || 0;
-    const bd = parseInt(inputs.beerDrinkers) || 0;
+    if (totalGuests === 0) {
+      toast.warning('Informe pelo menos 1 convidado.');
+      return;
+    }
 
-    // Métricas por pessoa (evento médio de 5 horas)
-    // Carnes
-    const meatMen = m * 400; // 400g
-    const meatWomen = w * 300; // 300g
-    const meatChildren = c * 200; // 200g
-    const totalMeatGrams = meatMen + meatWomen + meatChildren;
-    const totalMeatKg = totalMeatGrams / 1000;
+    const drinkCalc = calcBebidas(g);
+    setDrinkResults(drinkCalc);
 
-    // Divisão de carnes (50% bovina, 30% suína/linguiça, 20% frango)
-    const beefKg = totalMeatKg * 0.5;
-    const porkKg = totalMeatKg * 0.3;
-    const chickenKg = totalMeatKg * 0.2;
+    if (partyType === 'churrasco') {
+      setResults(calcChurrasco(g));
+    } else {
+      setResults(calcFesta(g, partyType));
+    }
 
-    // Bebidas
-    const beerLiters = bd * 1.5; // 1.5L de cerveja por adulto que bebe (~4 latas de 350ml)
-    const beerCans = Math.ceil((beerLiters * 1000) / 350);
-
-    const totalPeople = m + w + c;
-    const sodaLiters = Math.ceil((totalPeople * 400) / 1000); // 400ml por pessoa
-    const waterLiters = Math.ceil((totalPeople * 300) / 1000); // 300ml por pessoa
-
-    // Acompanhamentos ajustados para serem realistas (acaba com o "churrasco de pão de alho"!)
-    const garlicBread = Math.ceil((m + w) * 1.2 + c * 0.8); // 1.2 por adulto, 0.8 por criança
-    const garlicBreadPacks = Math.ceil(garlicBread / 5); // Geralmente vêm 5 no pacote
-    const coalBags = Math.ceil(totalMeatKg / 6); // 1 saco de 5kg para cada 6kg de carne
-    const grossSaltKg = (totalMeatKg * 0.04).toFixed(1); // 40g de sal por kg de carne
-
-    setResults({
-      beefKg: beefKg.toFixed(1),
-      porkKg: porkKg.toFixed(1),
-      chickenKg: chickenKg.toFixed(1),
-      totalMeatKg: totalMeatKg.toFixed(1),
-      beerCans,
-      sodaLiters,
-      waterLiters,
-      garlicBread,
-      garlicBreadPacks,
-      coalBags,
-      grossSaltKg,
-    });
-    
-    // Limpa conselho de IA anterior para recalcular sob demanda e redefine para visão geral
     setAiAdvice(null);
-    setActiveTab('overview');
+    setActiveTab('food');
+    toast.success(`Calculado para ${totalGuests} pessoas! 🎉`);
   };
 
-  const steps = [
-    {
-      title: "Despejando o carvão...",
-      desc: "Selecionando o melhor carvão vegetal de eucalipto para criar uma brasa forte e duradoura.",
-      icon: (
-        <div className="relative w-28 h-28 flex items-center justify-center bg-zinc-900/50 rounded-full border border-border/20">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: -45, opacity: 0, rotate: 0 }}
-              animate={{ y: 15, opacity: 1, rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1.8, delay: i * 0.25 }}
-              className="absolute w-5 h-5 bg-zinc-800 border border-zinc-700/80 rounded-md shadow-inner"
-              style={{ left: `${20 + i * 12}%`, top: 15 }}
-            />
-          ))}
-          <div className="absolute bottom-5 w-16 h-4 bg-zinc-950 border border-zinc-800 rounded-lg" />
-        </div>
-      )
-    },
-    {
-      title: "Acendendo o fogo...",
-      desc: "Soprando a brasa para atingir a temperatura ideal. O calor está subindo!",
-      icon: (
-        <div className="relative w-28 h-28 flex items-center justify-center bg-amber-950/20 rounded-full border border-amber-500/10">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ 
-                y: [15, -40], 
-                x: [0, Math.sin(i) * 15, 0],
-                opacity: [0, 1, 0],
-                scale: [0.5, 1.2, 0.5] 
-              }}
-              transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
-              className="absolute w-2.5 h-2.5 rounded-full"
-              style={{ 
-                left: `${35 + Math.random() * 30}%`, 
-                bottom: 25,
-                backgroundColor: i % 2 === 0 ? '#F59E0B' : '#EF4444' 
-              }}
-            />
-          ))}
-          <Flame size={48} className="text-amber-500 fill-amber-500/20 animate-bounce-slow stroke-[1.5]" />
-        </div>
-      )
-    },
-    {
-      title: "Escolhendo os cortes premium...",
-      desc: "Selecionando Picanha marmorizada, Fraldinha macia e cortes especiais Celebrate!.",
-      icon: (
-        <div className="relative w-28 h-28 flex items-center justify-center bg-rose-950/20 rounded-full border border-rose-500/10">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
-          >
-            <svg viewBox="0 0 100 100" className="w-16 h-16 text-rose-500 fill-rose-500/10 stroke-rose-500">
-              <path d="M 20,40 C 15,20 45,10 70,25 C 90,35 95,65 80,80 C 65,95 35,95 25,80 C 15,70 25,60 20,40 Z" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M 40,30 C 45,35 35,45 40,55" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="3,3" />
-              <path d="M 60,35 C 65,45 55,55 60,65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="3,3" />
-              <path d="M 75,70 C 70,75 75,80 80,75 C 85,70 80,65 75,70 Z" fill="white" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          </motion.div>
-          <Sparkles size={20} className="absolute top-4 right-4 text-yellow-400 fill-yellow-400 animate-pulse" />
-        </div>
-      )
-    },
-    {
-      title: "Temperando com sal grosso...",
-      desc: "Massageando as carnes com sal grosso especial para ressaltar a suculência natural.",
-      icon: (
-        <div className="relative w-28 h-28 flex items-center justify-center bg-zinc-800/40 rounded-full border border-border/20">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: -25, opacity: 0 }}
-              animate={{ y: 25, opacity: [0, 1, 1, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.08 }}
-              className="absolute w-1.5 h-1.5 bg-white rounded-sm border border-zinc-300"
-              style={{ left: `${25 + (i * 7) % 50}%` }}
-            />
-          ))}
-          <svg viewBox="0 0 100 100" className="w-14 h-14 text-zinc-400 fill-zinc-400/10 stroke-zinc-400">
-            <path d="M 20,40 C 15,20 45,10 70,25 C 90,35 95,65 80,80 C 65,95 35,95 25,80 C 15,70 25,60 20,40 Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
-          </svg>
-        </div>
-      )
-    },
-    {
-      title: "Grelhando e defumando...",
-      desc: "As carnes estão na brasa quente, selando e criando aquele aroma irresistível de fumaça.",
-      icon: (
-        <div className="relative w-28 h-28 flex items-center justify-center bg-amber-950/30 rounded-full border border-amber-500/20">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ 
-                y: [10, -45], 
-                x: [0, (i % 2 === 0 ? 8 : -8), 0],
-                opacity: [0, 0.7, 0],
-                scale: [0.8, 1.3]
-              }}
-              transition={{ repeat: Infinity, duration: 2.2, delay: i * 0.4 }}
-              className="absolute text-zinc-500/50 font-black text-2xl"
-              style={{ bottom: 25, left: `${30 + i * 11}%` }}
-            >
-              ~
-            </motion.div>
-          ))}
-          <div className="absolute w-16 h-1 bg-zinc-700/80 rounded-full bottom-8 border border-zinc-600/40" />
-          <Flame size={32} className="text-amber-500 fill-amber-500/10 stroke-[1.5] mb-2" />
-        </div>
-      )
-    }
-  ];
-
+  // IA Advice (apenas para churrasco)
   const fetchAiAdvice = async () => {
-    console.log("=== INICIANDO FETCH AI ADVICE ===");
-    console.log("Inputs atuais:", inputs);
-    
     setIsGeneratingAi(true);
     setLoadingStep(0);
-
-    // Inicia cronômetro visual dos passos
-    let currentStep = 0;
+    let step = 0;
     const timer = setInterval(() => {
-      currentStep++;
-      console.log(`Incrementando passo da animação para: ${currentStep}`);
-      if (currentStep <= 4) {
-        setLoadingStep(currentStep);
-      } else {
-        clearInterval(timer);
-      }
+      step++;
+      if (step <= 4) setLoadingStep(step);
+      else clearInterval(timer);
     }, 1300);
 
-    const startTime = Date.now();
-    let success = false;
-    let apiData = null;
-    let apiError = null;
-
+    const start = Date.now();
     try {
-      console.log("1. Testando conectividade com o backend em http://localhost:3101/health...");
-      try {
-        const healthCheck = await fetch("http://localhost:3101/health");
-        console.log("Status de saúde do backend:", healthCheck.status);
-      } catch (err) {
-        console.error("ALERTA: O backend não pôde ser alcançado em http://localhost:3101!", err);
-      }
-
-      console.log("2. Chamando api.ai.getChurrascoAdvice...");
-      apiData = await api.ai.getChurrascoAdvice({
-        men: inputs.men,
-        women: inputs.women,
-        children: inputs.children,
-        beerDrinkers: inputs.beerDrinkers
+      const data = await api.ai.getChurrascoAdvice({
+        men: guests.adults,
+        women: guests.women,
+        children: guests.children,
+        beerDrinkers: guests.beerDrinkers
       });
-      console.log("3. Resposta da API recebida com sucesso:", apiData);
-      success = true;
-    } catch (error) {
-      console.error("ERRO CRÍTICO NA CHAMADA DA API:", error);
-      apiError = error;
-    }
-
-    // Garante que o usuário assista a pelo menos 5.5 segundos do processo artesanal do Chef
-    const elapsedTime = Date.now() - startTime;
-    const minDuration = 5500;
-    const delay = Math.max(0, minDuration - elapsedTime);
-    console.log(`Tempo decorrido da API: ${elapsedTime}ms. Aplicando delay restante: ${delay}ms`);
-
-    await new Promise(resolve => setTimeout(resolve, delay));
-    clearInterval(timer);
-    setIsGeneratingAi(false);
-    console.log("Finalizando estado isGeneratingAi.");
-
-    if (success && apiData) {
-      setAiAdvice(apiData);
-      toast.success("Cardápio Gourmet gerado pelo Gemini! 🍖", { position: "top-center" });
+      const elapsed = Date.now() - start;
+      await new Promise(r => setTimeout(r, Math.max(0, 5500 - elapsed)));
+      clearInterval(timer);
+      setIsGeneratingAi(false);
+      setAiAdvice(data);
       setActiveTab('chef');
-    } else {
-      console.error("Exibindo toast de erro para o usuário:", apiError);
-      toast.error(apiError?.message || "Ocorreu um erro ao consultar o Gemini.");
+      toast.success('Mentoria do Chef gerada pelo Gemini! 🍖');
+    } catch (err) {
+      clearInterval(timer);
+      setIsGeneratingAi(false);
+      toast.error(err?.message || 'Erro ao consultar IA.');
     }
   };
 
+  // Fornecedores próximos
+  const handleFindSuppliers = async () => {
+    setIsLoadingSuppliers(true);
+    try {
+      const data = await api.suppliers.getAll({});
+      setNearbySuppliers(data.slice(0, 4));
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => {}
+        );
+      }
+      setActiveTab('suppliers');
+      toast.success('Fornecedores carregados! 📍');
+    } catch {
+      toast.error('Não foi possível carregar fornecedores.');
+    } finally {
+      setIsLoadingSuppliers(false);
+    }
+  };
+
+  // Tipo de festa selecionado
+  const selectedType = PARTY_TYPES.find(t => t.id === partyType) || PARTY_TYPES[0];
+
+  // Tabs disponíveis após calcular
+  const tabs = [
+    { id: 'food', label: partyType === 'churrasco' ? '🥩 Comidas' : '🍽️ Comidas', show: true },
+    { id: 'drinks', label: '🍺 Bebidas', show: true },
+    ...(partyType === 'churrasco' ? [{ id: 'chef', label: '✨ Chef IA', show: true }] : []),
+    { id: 'suppliers', label: '📍 Fornecedores', show: true },
+  ].filter(t => t.show);
+
+  // Animações de loading do Chef
+  const loadingSteps = [
+    { title: 'Despejando o carvão...', icon: '🪵' },
+    { title: 'Acendendo o fogo...', icon: '🔥' },
+    { title: 'Escolhendo os cortes...', icon: '🥩' },
+    { title: 'Temperando com sal grosso...', icon: '🧂' },
+    { title: 'Grelhando e defumando...', icon: '🍖' },
+  ];
+
   return (
-    <div className="min-h-screen bg-background pb-16 transition-colors duration-300 relative overflow-hidden text-left">
-      {/* Decorative Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] rounded-full bg-primary/10 dark:bg-primary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
-      <div className="absolute bottom-[20%] right-[-10%] w-[250px] md:w-[500px] h-[250px] md:h-[500px] rounded-full bg-secondary/10 dark:bg-secondary/5 blur-[80px] md:blur-[150px] pointer-events-none z-0" />
+    <div className="min-h-screen bg-background pb-24 transition-colors duration-300 relative overflow-hidden">
 
-      {/* Header Container */}
-      <div className="relative z-10 pt-10 pb-10 px-6 border-b border-border/40 shadow-sm overflow-hidden">
-        {/* Subtle Background Image & Texture */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=1200&auto=format&fit=crop" 
-            alt="Background" 
-            className="w-full h-full object-cover opacity-[0.08] mix-blend-multiply dark:mix-blend-lighten dark:opacity-[0.15]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background/95 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
-        </div>
+      {/* Orbs decorativos */}
+      <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full bg-primary/10 blur-[80px] pointer-events-none z-0" />
+      <div className="absolute bottom-[10%] right-[-10%] w-[250px] md:w-[400px] h-[250px] md:h-[400px] rounded-full bg-secondary/10 blur-[80px] pointer-events-none z-0" />
 
-        {/* Subtle Decorative Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none z-0" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-[60px] pointer-events-none z-0" />
-        <div className="max-w-6xl mx-auto flex items-center justify-between relative z-10">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onBack}
-              className="text-foreground hover:bg-muted rounded-full w-10 h-10 border border-border/50 bg-background/50 backdrop-blur-sm"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          </motion.div>
+      {/* ── HEADER ── */}
+      <div className="relative z-10 pt-8 pb-8 px-4 md:px-6 border-b border-border/40">
+        <div className="max-w-5xl mx-auto flex items-center justify-between mb-5">
+          <Button variant="ghost" size="icon" onClick={onBack}
+            className="rounded-full w-10 h-10 border border-border/50 bg-background/50 text-foreground hover:bg-muted">
+            <ArrowLeft size={20} />
+          </Button>
           <div className="flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full">
-            <Flame size={16} strokeWidth={2.5} className="text-primary" />
-            <h1 className="text-[10px] font-black uppercase tracking-widest text-primary">Calculadora</h1>
+            <Calculator size={14} className="text-primary" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Calculadora</span>
           </div>
           <div className="w-10 h-10" />
         </div>
-        
-        <div className="max-w-3xl mx-auto mt-6 text-center z-10 relative">
-          <motion.h2 
-            initial={{ opacity: 0, y: -20 }}
+
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl font-black tracking-tight text-foreground"
+            className="text-2xl sm:text-4xl font-black tracking-tight text-foreground"
           >
-            Churrascômetro Gourmet
+            Calculadora de Consumo
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-3 text-sm font-semibold text-muted-foreground max-w-lg mx-auto"
+            transition={{ delay: 0.15 }}
+            className="mt-2 text-xs sm:text-sm font-semibold text-muted-foreground max-w-lg mx-auto"
           >
-            Evite desperdício! Calcule carnes, acompanhamentos e bebidas baseados no número real de convidados e ative a IA para dicas exclusivas de cortes.
+            Calcule comidas, bebidas e encontre fornecedores para qualquer tipo de festa — sem desperdício!
           </motion.p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
-        {/* Lado Esquerdo (4 cols): Entrada de Dados e Ativação da IA */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="lg:col-span-4 space-y-6"
-        >
-          <Card className="shadow-lg border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-primary to-secondary" />
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base font-extrabold flex items-center gap-2 text-foreground">
-                <Users size={18} className="text-primary" /> Convidados
-              </CardTitle>
-              <CardDescription className="text-xs">Configure o perfil dos seus participantes.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={calculateConsumo} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="input-men" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Homens</Label>
-                    <Input
-                      id="input-men"
-                      type="number"
-                      min="0"
-                      value={inputs.men}
-                      onChange={(e) => setInputs({ ...inputs, men: e.target.value })}
-                      required
-                      className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-4 text-sm"
-                    />
+      <div className="max-w-5xl mx-auto px-4 md:px-6 mt-6 relative z-10 space-y-6">
+
+        {/* ── SELETOR DE TIPO DE FESTA ── */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Tipo de Evento</p>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {PARTY_TYPES.map(type => {
+              const Icon = type.icon;
+              const active = partyType === type.id;
+              return (
+                <motion.button
+                  key={type.id}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => { setPartyType(type.id); setResults(null); setDrinkResults(null); setAiAdvice(null); }}
+                  className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${
+                    active
+                      ? `${type.bg} ${type.border} shadow-md`
+                      : 'bg-card border-border/40 hover:border-border'
+                  }`}
+                >
+                  <span className="text-xl sm:text-2xl">{type.emoji}</span>
+                  <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider leading-tight text-center ${active ? type.text : 'text-muted-foreground'}`}>
+                    {type.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── GRID PRINCIPAL ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* Coluna de entrada (4 cols) */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+            className="lg:col-span-4 space-y-4"
+          >
+            <Card className={`shadow-lg border-2 ${selectedType.border} bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden`}>
+              <div className={`h-1.5 bg-gradient-to-r ${selectedType.color}`} />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-extrabold flex items-center gap-2 text-foreground">
+                  <Users size={16} className={selectedType.text} /> Convidados
+                </CardTitle>
+                <CardDescription className="text-[11px]">Configure o perfil dos participantes.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCalculate} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {partyType === 'infantil' ? 'Adultos' : 'Homens'}
+                      </Label>
+                      <Input type="number" min="0" value={guests.adults}
+                        onChange={e => setGuests({ ...guests, adults: e.target.value })}
+                        className="rounded-xl border-border/80 py-4 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {partyType === 'infantil' ? 'Mulheres' : 'Mulheres'}
+                      </Label>
+                      <Input type="number" min="0" value={guests.women}
+                        onChange={e => setGuests({ ...guests, women: e.target.value })}
+                        className="rounded-xl border-border/80 py-4 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Crianças</Label>
+                      <Input type="number" min="0" value={guests.children}
+                        onChange={e => setGuests({ ...guests, children: e.target.value })}
+                        className="rounded-xl border-border/80 py-4 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bebem Cerveja</Label>
+                      <Input type="number" min="0" value={guests.beerDrinkers}
+                        onChange={e => setGuests({ ...guests, beerDrinkers: e.target.value })}
+                        className="rounded-xl border-border/80 py-4 text-sm" />
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="input-women" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mulheres</Label>
-                    <Input
-                      id="input-women"
-                      type="number"
-                      min="0"
-                      value={inputs.women}
-                      onChange={(e) => setInputs({ ...inputs, women: e.target.value })}
-                      required
-                      className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-4 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="input-children" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Crianças</Label>
-                    <Input
-                      id="input-children"
-                      type="number"
-                      min="0"
-                      value={inputs.children}
-                      onChange={(e) => setInputs({ ...inputs, children: e.target.value })}
-                      required
-                      className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-4 text-sm"
-                    />
+                  {/* Horas do evento */}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Duração (horas)</Label>
+                    <div className="flex gap-2">
+                      {[3, 4, 5, 6, 8].map(h => (
+                        <button
+                          key={h} type="button"
+                          onClick={() => setGuests({ ...guests, hours: String(h) })}
+                          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${
+                            parseInt(guests.hours) === h
+                              ? `${selectedType.bg} ${selectedType.border} ${selectedType.text}`
+                              : 'border-border/50 text-muted-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {h}h
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="input-beer" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bebem Cerveja</Label>
-                    <Input
-                      id="input-beer"
-                      type="number"
-                      min="0"
-                      value={inputs.beerDrinkers}
-                      onChange={(e) => setInputs({ ...inputs, beerDrinkers: e.target.value })}
-                      required
-                      className="rounded-xl border-border/80 focus-visible:ring-primary/40 focus-visible:ring-2 py-4 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="pt-2">
-                  <Button type="submit" className="w-full py-5 bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider shadow-md shadow-primary/10 cursor-pointer">
-                    <Flame size={14} className="animate-pulse text-yellow-300 fill-yellow-300" /> Calcular
-                  </Button>
-                </motion.div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* SLIM IA CTA CARD */}
-          {results && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
-            >
-              <Card className="shadow-md border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.04] to-orange-500/[0.04] rounded-2xl overflow-hidden p-4 relative">
-                <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-amber-500/5 rounded-full blur-[30px] pointer-events-none" />
-                <div className="flex items-center justify-between gap-4 relative z-10">
-                  <div className="space-y-1 text-left">
-                    <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full">
-                      <Sparkles size={8} className="fill-amber-500" /> Chef Celebrate!
-                    </span>
-                    <h4 className="text-xs font-black text-foreground tracking-tight">Cortes & Harmonizações</h4>
-                    <p className="text-[10px] text-muted-foreground leading-snug">
-                      {aiAdvice ? "Menu do Chef liberado na aba ao lado!" : "Consulte a IA para refinar seu menu."}
-                    </p>
-                  </div>
-                  
-                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
-                    <Button 
-                      onClick={fetchAiAdvice} 
-                      disabled={isGeneratingAi}
-                      size="sm"
-                      className="py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-[9px] uppercase tracking-widest px-3 rounded-xl flex items-center justify-center gap-1 cursor-pointer shadow-sm shadow-amber-500/15"
-                    >
-                      {isGeneratingAi ? (
-                        <>
-                          <Loader2 className="animate-spin h-3 w-3" />
-                          <span>Criando...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={10} className="text-white fill-white animate-pulse" />
-                          <span>{aiAdvice ? "Recriar" : "Ativar IA"}</span>
-                        </>
-                      )}
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button type="submit" className={`w-full py-5 bg-gradient-to-r ${selectedType.color} hover:opacity-95 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-md`}>
+                      <Calculator size={14} />
+                      Calcular para {totalGuests || '?'} pessoas
                     </Button>
                   </motion.div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* CTA Fornecedores */}
+            {results && (
+              <Card className="border border-border/50 bg-card/80 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1 mb-0.5">
+                      <MapPin size={9} /> Fornecedores Próximos
+                    </span>
+                    <p className="text-xs font-extrabold text-foreground">Buffets, docerias e mais</p>
+                    <p className="text-[10px] text-muted-foreground">Baseado na sua localização</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleFindSuppliers}
+                    disabled={isLoadingSuppliers}
+                    className="rounded-xl px-3 bg-primary text-primary-foreground text-[10px] font-black h-9 shrink-0"
+                  >
+                    {isLoadingSuppliers ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                  </Button>
                 </div>
               </Card>
-            </motion.div>
-          )}
-        </motion.div>
+            )}
 
-        {/* Lado Direito (8 cols): Event Dashboard Unificado em Abas */}
-        <div className="lg:col-span-8 space-y-6">
-          <AnimatePresence mode="wait">
-            {results ? (
-              <motion.div
-                key="event-dashboard"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Card className="shadow-xl border border-border/40 bg-card/85 backdrop-blur-md rounded-3xl overflow-hidden p-6 space-y-6">
-                  {/* Dashboard Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/20 pb-4 text-left">
-                    <div>
-                      <h3 className="text-lg font-black text-foreground flex items-center gap-2">
-                        <TrendingUp size={20} className="text-primary" /> Painel do Churrasco
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Estimativa de insumos para {(parseInt(inputs.men) || 0) + (parseInt(inputs.women) || 0) + (parseInt(inputs.children) || 0)} convidados.
-                      </p>
-                    </div>
-                    {/* Minimalist demography pills */}
-                    <div className="flex flex-wrap gap-1.5 text-[9px] font-black uppercase tracking-wider text-muted-foreground">
-                      <span className="bg-muted px-2.5 py-1 rounded-full">{inputs.men} H</span>
-                      <span className="bg-muted px-2.5 py-1 rounded-full">{inputs.women} M</span>
-                      <span className="bg-muted px-2.5 py-1 rounded-full">{inputs.children} C</span>
-                      <span className="bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-full border border-amber-500/10">{inputs.beerDrinkers} Bebem</span>
-                    </div>
+            {/* CTA Chef IA (só para churrasco) */}
+            {results && partyType === 'churrasco' && (
+              <Card className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1 mb-0.5">
+                      <Sparkles size={9} className="fill-amber-500" /> Chef IA Celebrate!
+                    </span>
+                    <p className="text-xs font-extrabold text-foreground">Cortes & Harmonizações</p>
+                    <p className="text-[10px] text-muted-foreground">{aiAdvice ? 'Menu gerado!' : 'Gemini AI'}</p>
                   </div>
+                  <Button
+                    size="sm"
+                    onClick={fetchAiAdvice}
+                    disabled={isGeneratingAi}
+                    className="rounded-xl px-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black h-9 shrink-0"
+                  >
+                    {isGeneratingAi ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </motion.div>
 
-                  {/* Segmented Pill Tabs Navigation */}
-                  <div className="flex flex-wrap border-b border-border/20 bg-zinc-900/10 dark:bg-zinc-950/20 p-1 rounded-xl gap-1 overflow-x-auto">
-                    <button
-                      onClick={() => setActiveTab('overview')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                        activeTab === 'overview'
-                          ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <TrendingUp size={12} className={activeTab === 'overview' ? "text-primary" : ""} />
-                      <span>Geral</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('meats')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                        activeTab === 'meats'
-                          ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <UtensilsCrossed size={12} className={activeTab === 'meats' ? "text-primary" : ""} />
-                      <span>Cortes</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('drinks')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                        activeTab === 'drinks'
-                          ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <CupSoda size={12} className={activeTab === 'drinks' ? "text-primary" : ""} />
-                      <span>Bebidas</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('chef')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer relative ${
-                        activeTab === 'chef'
-                          ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm'
-                          : 'text-muted-foreground hover:text-amber-500/80'
-                      }`}
-                    >
-                      <Sparkles size={12} className={activeTab === 'chef' ? "text-amber-500 fill-amber-500/10 animate-pulse" : ""} />
-                      <span>Chef IA</span>
-                      {aiAdvice && activeTab !== 'chef' && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-ping" />
-                      )}
-                    </button>
-                  </div>
+          {/* Coluna de resultados (8 cols) */}
+          <div className="lg:col-span-8">
+            <AnimatePresence mode="wait">
+              {results ? (
+                <motion.div
+                  key="results"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Card className="shadow-xl border border-border/40 bg-card/85 backdrop-blur-md rounded-3xl overflow-hidden">
+                    {/* Header do painel */}
+                    <div className={`h-1.5 bg-gradient-to-r ${selectedType.color}`} />
+                    <div className="p-5 sm:p-6 border-b border-border/20">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-black text-foreground flex items-center gap-2">
+                            <span className="text-xl">{selectedType.emoji}</span>
+                            {selectedType.label} — {totalGuests} Pessoas
+                          </h3>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{selectedType.desc} · {guests.hours}h de evento</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="bg-muted text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">{guests.adults} H</span>
+                          <span className="bg-muted text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">{guests.women} M</span>
+                          <span className="bg-muted text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">{guests.children} C</span>
+                          <span className="bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-amber-500/10">{guests.beerDrinkers} Bebem</span>
+                        </div>
+                      </div>
+                    </div>
 
-                  {/* Tab Panes content area */}
-                  <div className="min-h-[300px]">
-                    <AnimatePresence mode="wait">
-                      {activeTab === 'overview' && (
-                        <motion.div
-                          key="tab-overview"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                          className="space-y-6 text-left"
-                        >
-                          {/* 3-column quick metric KPIs */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                            {/* Meat Overview Card */}
-                            <div className="bg-muted/30 border border-border/20 p-4.5 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-all duration-300 text-left">
-                              <div className="flex justify-between items-start">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Carnes</span>
-                                <UtensilsCrossed size={16} className="text-primary" />
-                              </div>
-                              <div className="mt-4">
-                                <h4 className="text-2xl font-black text-foreground leading-none">{results.totalMeatKg} <span className="text-xs font-bold text-muted-foreground uppercase">kg</span></h4>
-                                <p className="text-[9px] text-muted-foreground font-semibold mt-1">Peso total calculado</p>
-                              </div>
-                              
-                              {/* Segmented multi-color progress bar */}
-                              <div className="mt-4 space-y-2">
-                                <div className="h-2 w-full rounded-full overflow-hidden flex bg-muted/65">
-                                  <div className="bg-primary h-full transition-all duration-300" style={{ width: '50%' }} title="Bovina" />
-                                  <div className="bg-secondary h-full transition-all duration-300" style={{ width: '30%' }} title="Suína" />
-                                  <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: '20%' }} title="Frango" />
-                                </div>
-                                <div className="flex justify-between text-[8px] font-black text-muted-foreground tracking-wider uppercase">
-                                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-primary" /> {results.beefKg}kg Boi</span>
-                                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-secondary" /> {results.porkKg}kg Porco</span>
-                                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> {results.chickenKg}kg Frango</span>
+                    {/* Tabs */}
+                    <div className="overflow-x-auto border-b border-border/20">
+                      <div className="flex gap-1 p-2 min-w-max">
+                        {tabs.map(tab => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                              activeTab === tab.id
+                                ? `${selectedType.bg} ${selectedType.text} ${selectedType.border} border shadow-sm`
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Conteúdo das tabs */}
+                    <div className="p-5 sm:p-6 min-h-[320px]">
+                      <AnimatePresence mode="wait">
+
+                        {/* TAB: Comidas */}
+                        {activeTab === 'food' && results && (
+                          <motion.div key="food" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
+                            {results.sections.map((section, si) => (
+                              <div key={si} className="space-y-2">
+                                <h4 className={`text-[10px] font-black uppercase tracking-widest ${section.color} border-b border-border/20 pb-1.5 flex justify-between`}>
+                                  <span>{section.title}</span>
+                                  <span className="text-muted-foreground">Quantidade</span>
+                                </h4>
+                                <div className="space-y-1.5">
+                                  {section.items.map((item, ii) => (
+                                    <div key={ii} className={`flex justify-between items-center px-4 py-3 rounded-xl border border-border/10 transition-all hover:border-border/40 ${item.bold ? 'bg-primary/5 border-primary/20' : 'bg-muted/25'}`}>
+                                      <span className={`text-xs font-semibold text-foreground/90 ${item.bold ? 'font-extrabold' : ''}`}>{item.label}</span>
+                                      <span className={`text-xs font-black px-3 py-1 rounded-full shrink-0 ml-2 ${item.bold ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground border border-border/20'}`}>{item.qty}</span>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            </div>
+                            ))}
+                          </motion.div>
+                        )}
 
-                            {/* Drinks Overview Card */}
-                            <div className="bg-muted/30 border border-border/20 p-4.5 rounded-2xl flex flex-col justify-between hover:border-secondary/20 transition-all duration-300 text-left">
-                              <div className="flex justify-between items-start">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Bebidas</span>
-                                <CupSoda size={16} className="text-secondary" />
-                              </div>
-                              <div className="mt-4">
-                                <h4 className="text-2xl font-black text-foreground leading-none">{results.beerCans} <span className="text-xs font-bold text-muted-foreground uppercase">latas</span></h4>
-                                <p className="text-[9px] text-muted-foreground font-semibold mt-1">Cerveja recomendada</p>
-                              </div>
-                              <div className="mt-4 pt-3 border-t border-border/10 flex justify-between items-center text-[9px] font-bold text-muted-foreground uppercase">
-                                <span>🥤 Refri: <strong>{results.sodaLiters} L</strong></span>
-                                <span>💧 Água: <strong>{results.waterLiters} L</strong></span>
-                              </div>
-                            </div>
-
-                            {/* Accessories Overview Card */}
-                            <div className="bg-muted/30 border border-border/20 p-4.5 rounded-2xl flex flex-col justify-between hover:border-accent/20 transition-all duration-300 text-left">
-                              <div className="flex justify-between items-start">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Acompanhamentos</span>
-                                <ShoppingBag size={16} className="text-accent" />
-                              </div>
-                              <div className="mt-4">
-                                <h4 className="text-2xl font-black text-foreground leading-none">{results.garlicBread} <span className="text-xs font-bold text-muted-foreground uppercase">un</span></h4>
-                                <p className="text-[9px] text-muted-foreground font-semibold mt-1">Pão de Alho ({results.garlicBreadPacks} pacotes)</p>
-                              </div>
-                              <div className="mt-4 pt-3 border-t border-border/10 flex justify-between items-center text-[9px] font-bold text-muted-foreground uppercase">
-                                <span>⚫ Carvão: <strong>{results.coalBags} sacos</strong></span>
-                                <span>🧂 Sal: <strong>{results.grossSaltKg} kg</strong></span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Interactive bottom advice teaser banner */}
-                          <div className="bg-muted/20 border border-border/10 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                            {aiAdvice ? (
-                              <>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                                    <Sparkles size={14} className="fill-amber-500/10" />
-                                  </div>
-                                  <div className="text-left">
-                                    <h5 className="text-[10px] font-black uppercase tracking-wider text-amber-500">Dica do Mestre Assador</h5>
-                                    <p className="text-[11px] text-zinc-300 font-semibold italic mt-0.5 leading-snug line-clamp-1">
-                                      "{aiAdvice.grillingTips}"
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveTab('chef')}
-                                  className="text-xs font-black uppercase text-amber-500 hover:text-amber-400 shrink-0 cursor-pointer flex items-center gap-1 transition-colors duration-200 bg-transparent border-0"
-                                >
-                                  Ler Mentoria Completa →
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-xs text-zinc-300 font-semibold flex items-center gap-1.5">
-                                  <Sparkles size={14} className="text-amber-500 animate-pulse" />
-                                  Deseja refinar este menu com cortes nobres e harmonizações do Chef?
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={fetchAiAdvice}
-                                  className="text-xs font-black uppercase text-amber-500 hover:text-amber-400 cursor-pointer flex items-center gap-1 transition-colors duration-200 bg-transparent border-0"
-                                >
-                                  Chamar Chef IA →
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {activeTab === 'meats' && (
-                        <motion.div
-                          key="tab-meats"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                          className="space-y-3 text-left"
-                        >
-                          <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground border-b border-border/10 pb-2 flex justify-between">
-                            <span>Ingrediente</span>
-                            <span>Quantidade Recomendada</span>
-                          </h4>
-                          
-                          {/* Tabular meat & supplies list rows */}
-                          <div className="space-y-2 text-left">
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-primary/20 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><UtensilsCrossed size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Carne Bovina Estimada</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Picanha, Contrafilé, Fraldinha</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-primary/10 text-primary px-3 py-1 rounded-full">{results.beefKg} kg</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-secondary/20 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center"><UtensilsCrossed size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Carne Suína / Embutidos</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Linguiça Toscana, Costelinha, Pancetta</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-secondary/10 text-secondary px-3 py-1 rounded-full">{results.porkKg} kg</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-accent/20 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center"><UtensilsCrossed size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Cortes de Frango</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Tulipas, Coxinhas da asa selecionadas</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-accent/10 text-accent px-3 py-1 rounded-full">{results.chickenKg} kg</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-border/30 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-muted text-foreground flex items-center justify-center font-bold">🥖</span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Pão de Alho Especial</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Geralmente {results.garlicBreadPacks} pacotes com 5 unidades</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-muted border px-3 py-1 rounded-full">{results.garlicBread} un</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-border/30 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-muted text-foreground flex items-center justify-center font-bold">⚫</span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Carvão Vegetal</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Sacos de 5kg recomendados para brasa forte</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-muted border px-3 py-1 rounded-full">{results.coalBags} sacos</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-border/30 transition-all duration-300">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-muted text-foreground flex items-center justify-center font-bold">🧂</span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Sal Grosso / Sal de Parrilla</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Para tempero exato antes de colocar na grelha</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-foreground bg-muted border px-3 py-1 rounded-full">{results.grossSaltKg} kg</strong>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {activeTab === 'drinks' && (
-                        <motion.div
-                          key="tab-drinks"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                          className="space-y-4 text-left"
-                        >
-                          <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground border-b border-border/10 pb-2 flex justify-between">
-                            <span>Bebida</span>
-                            <span>Volume / Quantidade</span>
-                          </h4>
-
-                          <div className="space-y-2 text-left">
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-amber-500/20 transition-all duration-300 text-left">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center"><Beer size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Cerveja Gelada (350ml)</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Consumo estimado de 1.5L por adulto bebedor</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">{results.beerCans} latas</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-secondary/20 transition-all duration-300 text-left">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center"><CupSoda size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Refrigerantes & Sucos</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Estimativa geral de 400ml por convidado</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-secondary bg-secondary/10 px-3 py-1 rounded-full">{results.sodaLiters} Litros</strong>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-muted/25 px-4 py-3 rounded-xl border border-border/10 hover:border-accent/20 transition-all duration-300 text-left">
-                              <span className="flex items-center gap-3 font-semibold text-xs text-foreground/90">
-                                <span className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center"><CupSoda size={14} /></span>
-                                <div>
-                                  <p className="font-extrabold text-xs">Água Mineral</p>
-                                  <p className="text-[9px] text-muted-foreground uppercase font-semibold">Essencial para hidratação durante o churrasco</p>
-                                </div>
-                              </span>
-                              <strong className="text-xs font-black text-accent bg-accent/10 px-3 py-1 rounded-full">{results.waterLiters} Litros</strong>
-                            </div>
-                          </div>
-
-                          <div className="bg-muted/15 border border-border/10 p-3.5 rounded-xl text-left">
-                            <h5 className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">💡 Dica do Barman</h5>
-                            <p className="text-[10px] text-muted-foreground font-semibold mt-1 leading-relaxed">
-                              Recomendação de Gelo: Compre pelo menos 1 saco de gelo de 5kg para cada 15 latas de cerveja + refrigerantes. Coloque as bebidas sob gelo pelo menos 3 horas antes do início para estarem perfeitamente trincando!
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {activeTab === 'chef' && (
-                        <motion.div
-                          key="tab-chef"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {aiAdvice ? (
-                            <div className="space-y-5 text-left">
-                              {/* Elite speech bubble card */}
-                              <div className="bg-zinc-950/45 dark:bg-zinc-950/70 border border-amber-500/20 p-4.5 rounded-2xl relative overflow-hidden text-left animate-fade-in">
-                                <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-amber-500/5 rounded-full blur-[45px] pointer-events-none" />
-                                <div className="flex gap-3 items-start relative z-10">
-                                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/20">
-                                    <Flame size={16} className="animate-pulse" />
-                                  </div>
-                                  <div className="space-y-1 flex-1">
-                                    <h5 className="text-[9px] font-black uppercase tracking-wider text-amber-500">Conselho do Mestre Churrasqueiro</h5>
-                                    <p className="text-[11px] sm:text-xs text-zinc-300 leading-relaxed font-semibold italic whitespace-pre-line text-left">
-                                      "{aiAdvice.grillingTips}"
-                                    </p>
-                                  </div>
+                        {/* TAB: Bebidas */}
+                        {activeTab === 'drinks' && drinkResults && (
+                          <motion.div key="drinks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
+                            {drinkResults.sections.map((section, si) => (
+                              <div key={si} className="space-y-2">
+                                <h4 className={`text-[10px] font-black uppercase tracking-widest ${section.color} border-b border-border/20 pb-1.5 flex justify-between`}>
+                                  <span>{section.title}</span>
+                                  <span className="text-muted-foreground">Quantidade</span>
+                                </h4>
+                                <div className="space-y-1.5">
+                                  {section.items.map((item, ii) => (
+                                    <div key={ii} className="flex justify-between items-center px-4 py-3 rounded-xl bg-muted/25 border border-border/10 hover:border-border/40 transition-all">
+                                      <span className="text-xs font-semibold text-foreground/90">{item.label}</span>
+                                      <span className="text-xs font-black bg-muted px-3 py-1 rounded-full border border-border/20 shrink-0 ml-2">{item.qty}</span>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
+                            ))}
 
-                              {/* Meat Cuts and Sides Recommendations list */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                                {/* Premium Cuts */}
-                                <div className="space-y-3 text-left">
-                                  <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-500 border-b border-amber-500/10 pb-1 flex items-center gap-1.5">
-                                    <UtensilsCrossed size={12} /> Cortes Premium do Chef
-                                  </h5>
-                                  <div className="space-y-2.5">
-                                    {aiAdvice.meatSuggestions?.map((item, idx) => (
-                                      <div key={idx} className="bg-muted/20 border border-border/10 p-3.5 rounded-xl hover:border-amber-500/15 transition-all duration-300">
-                                        <div className="flex justify-between items-baseline gap-2">
-                                          <span className="font-extrabold text-foreground text-xs">{item.cut}</span>
-                                          <span className="font-black text-[10px] text-amber-500 shrink-0 uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded-md text-right">{item.quantity}</span>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground font-semibold leading-relaxed mt-1 whitespace-pre-line text-left">
-                                          {item.reason}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {/* Premium Sides */}
-                                <div className="space-y-3 text-left">
-                                  <h5 className="text-[10px] font-black uppercase tracking-widest text-orange-500 border-b border-orange-500/10 pb-1 flex items-center gap-1.5">
-                                    <ShoppingBag size={12} /> Guarnições & Toque Final
-                                  </h5>
-                                  <div className="space-y-2.5">
-                                    {aiAdvice.sidesSuggestions?.map((item, idx) => (
-                                      <div key={idx} className="bg-muted/20 border border-border/10 p-3.5 rounded-xl hover:border-orange-500/15 transition-all duration-300">
-                                        <div className="flex justify-between items-baseline gap-2">
-                                          <span className="font-extrabold text-foreground text-xs">{item.side}</span>
-                                          <span className="font-black text-[10px] text-orange-500 shrink-0 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 rounded-md text-right">{item.quantity}</span>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground font-semibold leading-relaxed mt-1 whitespace-pre-line text-left">
-                                          <strong className="text-orange-500/90 uppercase tracking-wider text-[8px] mr-1.5 bg-orange-500/10 px-1.5 py-0.5 rounded-md">Segredo do Chef:</strong>
-                                          {item.tip}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            /* IA Advice NOT yet generated */
-                            <div className="flex flex-col justify-center items-center py-8 text-center space-y-4">
-                              <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 text-amber-500 animate-bounce-slow">
-                                <Sparkles size={20} className="fill-amber-500/10" />
-                              </div>
+                            {/* Dica de Gelo */}
+                            <div className="bg-sky-500/5 border border-sky-500/20 rounded-2xl p-4 flex gap-3">
+                              <span className="text-xl shrink-0">🧊</span>
                               <div>
-                                <h4 className="text-sm font-black text-foreground">Liberar Mentoria do Chef Assador</h4>
-                                <p className="text-[11px] text-muted-foreground max-w-sm mx-auto mt-1 leading-relaxed">
-                                  Ative a inteligência artificial para que nosso Chef crie uma sequência de cortes de altíssimo nível e compartilhe técnicas profissionais de brasa.
+                                <p className="text-[10px] font-black text-sky-500 uppercase tracking-wider mb-1">💡 Dica do Barman</p>
+                                <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
+                                  Coloque as bebidas sob gelo pelo menos 3 horas antes. 1 saco de gelo (5kg) para cada 15 latas + 5L de refrigerante.
                                 </p>
                               </div>
-                              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="pt-2">
-                                <Button 
-                                  onClick={fetchAiAdvice} 
-                                  disabled={isGeneratingAi}
-                                  className="py-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-[9px] uppercase tracking-widest px-5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-amber-500/15"
-                                >
-                                  {isGeneratingAi ? (
-                                    <>
-                                      <Loader2 className="animate-spin h-3 w-3" />
-                                      <span>Consultando Chef...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Sparkles size={11} className="text-white fill-white animate-pulse" />
-                                      <span>Ativar Inteligência do Chef</span>
-                                    </>
-                                  )}
-                                </Button>
-                              </motion.div>
                             </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </Card>
-              </motion.div>
-            ) : (
-              /* No results calculated yet */
-              <motion.div
-                key="empty-panel"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <Card className="border-dashed border-2 border-border/60 p-12 text-center bg-card/30 rounded-3xl shadow-inner">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-5 border border-border/30 text-muted-foreground/50">
-                    <Flame size={30} className="text-primary animate-pulse" />
-                  </div>
-                  <h3 className="text-base font-extrabold text-foreground/90">Faça sua estimativa inteligente</h3>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-2 leading-relaxed">
-                    Utilizamos modelos de estimativa baseados em taxas de consumo brasileiras recomendadas, eliminando desperdício e otimizando seu orçamento.
-                  </p>
-                  
-                  <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 border px-3 py-1 rounded-full flex items-center gap-1"><Sparkles size={11} className="text-secondary" /> Sem Desperdício</span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 border px-3 py-1 rounded-full flex items-center gap-1"><TrendingUp size={11} className="text-primary" /> Otimização Real</span>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                          </motion.div>
+                        )}
+
+                        {/* TAB: Chef IA (Churrasco) */}
+                        {activeTab === 'chef' && (
+                          <motion.div key="chef" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                            {isGeneratingAi ? (
+                              <div className="flex flex-col items-center justify-center py-12 gap-6 text-center">
+                                <div className="text-5xl">{loadingSteps[loadingStep]?.icon || '🔥'}</div>
+                                <div className="space-y-2">
+                                  <p className="text-sm font-black text-foreground">{loadingSteps[loadingStep]?.title || 'Processando...'}</p>
+                                  <p className="text-[11px] text-muted-foreground">O Chef está preparando seu menu especial...</p>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  {loadingSteps.map((_, i) => (
+                                    <div key={i} className={`w-2 h-2 rounded-full transition-all ${i <= loadingStep ? 'bg-amber-500' : 'bg-muted'}`} />
+                                  ))}
+                                </div>
+                              </div>
+                            ) : aiAdvice ? (
+                              <div className="space-y-5">
+                                <div className="bg-zinc-950/40 dark:bg-zinc-950/70 border border-amber-500/20 p-4 rounded-2xl relative overflow-hidden">
+                                  <div className="flex gap-3 items-start">
+                                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/20">
+                                      <Flame size={15} className="animate-pulse" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[9px] font-black uppercase tracking-wider text-amber-500 mb-1">Conselho do Mestre Churrasqueiro</p>
+                                      <p className="text-xs text-zinc-300 leading-relaxed font-semibold italic">"{aiAdvice.grillingTips}"</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-500 border-b border-amber-500/10 pb-1 flex items-center gap-1.5">
+                                      <UtensilsCrossed size={11} /> Cortes Premium
+                                    </h5>
+                                    {aiAdvice.meatSuggestions?.map((item, i) => (
+                                      <div key={i} className="bg-muted/20 border border-border/10 p-3 rounded-xl">
+                                        <div className="flex justify-between items-baseline gap-2">
+                                          <span className="font-extrabold text-xs text-foreground">{item.cut}</span>
+                                          <span className="text-[10px] font-black text-amber-500 shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md">{item.quantity}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.reason}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="space-y-2">
+                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-orange-500 border-b border-orange-500/10 pb-1 flex items-center gap-1.5">
+                                      <ShoppingBag size={11} /> Guarnições
+                                    </h5>
+                                    {aiAdvice.sidesSuggestions?.map((item, i) => (
+                                      <div key={i} className="bg-muted/20 border border-border/10 p-3 rounded-xl">
+                                        <div className="flex justify-between items-baseline gap-2">
+                                          <span className="font-extrabold text-xs text-foreground">{item.side}</span>
+                                          <span className="text-[10px] font-black text-orange-500 shrink-0 bg-orange-500/10 px-2 py-0.5 rounded-md">{item.quantity}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.tip}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-10 text-center gap-5">
+                                <div className="w-14 h-14 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 text-amber-500">
+                                  <Sparkles size={22} className="fill-amber-500/10 animate-pulse" />
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-black text-foreground">Mentoria do Chef Assador</h4>
+                                  <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed">
+                                    Ative o Gemini AI para receber cortes nobres, técnicas de brasa e harmonizações exclusivas.
+                                  </p>
+                                </div>
+                                <Button onClick={fetchAiAdvice} disabled={isGeneratingAi}
+                                  className="py-4 px-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center gap-2">
+                                  <Sparkles size={13} className="fill-white/20" /> Ativar Chef IA
+                                </Button>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {/* TAB: Fornecedores Próximos */}
+                        {activeTab === 'suppliers' && (
+                          <motion.div key="suppliers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-black text-foreground">Fornecedores Sugeridos</h4>
+                              {userLocation && (
+                                <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                                  <Navigation size={11} /> Próximos de você
+                                </span>
+                              )}
+                            </div>
+
+                            {isLoadingSuppliers ? (
+                              <div className="flex justify-center py-10">
+                                <Loader2 size={28} className="animate-spin text-primary" />
+                              </div>
+                            ) : nearbySuppliers.length === 0 ? (
+                              <div className="text-center py-10 space-y-4">
+                                <div className="text-4xl">📍</div>
+                                <p className="text-sm font-bold text-muted-foreground">Clique em "Fornecedores" para buscar.</p>
+                                <Button onClick={handleFindSuppliers} className="rounded-xl px-5 py-3 text-xs font-black">
+                                  <Navigation size={14} className="mr-2" /> Buscar Próximos
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {nearbySuppliers.map(s => (
+                                  <div key={s.id} className="flex items-start gap-4 p-4 bg-card border border-border/50 rounded-2xl hover:shadow-md hover:border-primary/20 transition-all group">
+                                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                      <ShoppingBag size={16} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-extrabold text-foreground truncate group-hover:text-primary transition-colors">{s.companyName}</p>
+                                      <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 mt-0.5">
+                                        <MapPin size={10} /> {s.city} · {s.category}
+                                      </p>
+                                      <p className="text-[10px] text-foreground/70 mt-1 line-clamp-2 leading-relaxed">{s.description}</p>
+                                    </div>
+                                    <a href={`https://api.whatsapp.com/send?phone=${s.phone}`} target="_blank" rel="noreferrer"
+                                      className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shrink-0">
+                                      <Phone size={13} />
+                                    </a>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => toast.info('Acesse "Serviços" na navegação para ver todos os fornecedores.')}
+                                  className="w-full text-center text-xs font-black text-primary py-2 flex items-center justify-center gap-1 hover:opacity-70 transition-opacity"
+                                >
+                                  Ver todos os fornecedores <ChevronRight size={14} />
+                                </button>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+
+                      </AnimatePresence>
+                    </div>
+                  </Card>
+                </motion.div>
+              ) : (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <Card className="border-dashed border-2 border-border/50 p-10 sm:p-14 text-center bg-card/30 rounded-3xl">
+                    <div className="text-5xl mb-5">{selectedType.emoji}</div>
+                    <h3 className="text-base font-extrabold text-foreground/90">{selectedType.label} — Pronto para calcular!</h3>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-2 leading-relaxed">{selectedType.desc}</p>
+                    <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                      <span className="text-[10px] font-bold text-muted-foreground bg-muted/50 border px-3 py-1 rounded-full flex items-center gap-1">
+                        <Sparkles size={10} className="text-secondary" /> Sem Desperdício
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground bg-muted/50 border px-3 py-1 rounded-full flex items-center gap-1">
+                        <TrendingUp size={10} className="text-primary" /> Estimativas Reais
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground bg-muted/50 border px-3 py-1 rounded-full flex items-center gap-1">
+                        <MapPin size={10} className="text-emerald-500" /> Fornecedores Próximos
+                      </span>
+                    </div>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

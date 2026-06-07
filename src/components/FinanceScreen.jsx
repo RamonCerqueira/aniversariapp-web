@@ -290,8 +290,8 @@ export default function FinanceScreen({ onBack }) {
 
         {selectedPartyId ? (
           <>
-            {/* Cards de Indicadores */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* Cards de Indicadores — sempre 3 colunas, compactos no mobile */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* Orçamento */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -299,17 +299,20 @@ export default function FinanceScreen({ onBack }) {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
               >
-                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group">
+                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group h-full">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
-                  <CardContent className="p-5 flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Orçamento</p>
-                      <h3 className="text-xl sm:text-2xl font-extrabold text-foreground leading-none">
+                  <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+                    <div className="space-y-0.5 sm:space-y-1.5 min-w-0">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Orçamento</p>
+                      <h3 className="text-sm sm:text-2xl font-extrabold text-foreground leading-none break-all">
                         R$ {totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </h3>
                     </div>
-                    <div className="p-3 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary rounded-2xl transition-colors duration-300 group-hover:bg-primary/20">
+                    <div className="hidden sm:flex p-3 bg-primary/10 text-primary dark:bg-primary/20 rounded-2xl transition-colors group-hover:bg-primary/20 shrink-0">
                       <Wallet size={20} />
+                    </div>
+                    <div className="sm:hidden text-primary">
+                      <Wallet size={14} />
                     </div>
                   </CardContent>
                 </Card>
@@ -322,17 +325,20 @@ export default function FinanceScreen({ onBack }) {
                 transition={{ duration: 0.4, delay: 0.3 }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
               >
-                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group">
+                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group h-full">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-destructive" />
-                  <CardContent className="p-5 flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Gasto</p>
-                      <h3 className="text-xl sm:text-2xl font-extrabold text-destructive leading-none">
+                  <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+                    <div className="space-y-0.5 sm:space-y-1.5 min-w-0">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Gasto</p>
+                      <h3 className="text-sm sm:text-2xl font-extrabold text-destructive leading-none break-all">
                         R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </h3>
                     </div>
-                    <div className="p-3 bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive rounded-2xl transition-colors duration-300 group-hover:bg-destructive/20">
+                    <div className="hidden sm:flex p-3 bg-destructive/10 text-destructive dark:bg-destructive/20 rounded-2xl transition-colors group-hover:bg-destructive/20 shrink-0">
                       <TrendingUp size={20} />
+                    </div>
+                    <div className="sm:hidden text-destructive">
+                      <TrendingUp size={14} />
                     </div>
                   </CardContent>
                 </Card>
@@ -345,26 +351,26 @@ export default function FinanceScreen({ onBack }) {
                 transition={{ duration: 0.4, delay: 0.4 }}
                 whileHover={{ y: -3, transition: { duration: 0.2 } }}
               >
-                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group">
+                <Card className="shadow-md border border-border/50 bg-card/85 backdrop-blur-md rounded-2xl overflow-hidden relative group h-full">
                   <div className={`absolute top-0 left-0 w-1.5 h-full ${remainingBalance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                  <CardContent className="p-5 flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Saldo Restante</p>
-                      <h3 className={`text-xl sm:text-2xl font-extrabold leading-none ${remainingBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+                    <div className="space-y-0.5 sm:space-y-1.5 min-w-0">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Saldo</p>
+                      <h3 className={`text-sm sm:text-2xl font-extrabold leading-none break-all ${remainingBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                         R$ {remainingBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </h3>
                     </div>
-                    <div className={`p-3 rounded-2xl transition-colors duration-300 ${
-                      remainingBalance >= 0 
-                        ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' 
-                        : 'bg-rose-500/10 text-rose-500 group-hover:bg-rose-500/20'
-                    }`}>
+                    <div className={`hidden sm:flex p-3 rounded-2xl transition-colors shrink-0 ${remainingBalance >= 0 ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' : 'bg-rose-500/10 text-rose-500 group-hover:bg-rose-500/20'}`}>
                       <PiggyBank size={20} />
+                    </div>
+                    <div className={`sm:hidden ${remainingBalance >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      <PiggyBank size={14} />
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             </div>
+
 
             {/* Barra de Progresso Visual de Orçamento */}
             <motion.div

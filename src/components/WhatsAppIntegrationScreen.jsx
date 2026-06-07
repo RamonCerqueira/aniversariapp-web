@@ -149,11 +149,11 @@ export default function WhatsAppIntegrationScreen() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-full">
-      <div className="mb-8 flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
-          <MessageCircle size={32} className="text-emerald-500" /> WhatsApp Broadcast
+      <div className="mb-6 flex flex-col gap-1.5">
+        <h1 className="text-xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2 sm:gap-3">
+          <MessageCircle size={26} className="text-emerald-500 shrink-0" /> WhatsApp Broadcast
         </h1>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-xs sm:text-sm font-medium text-muted-foreground">
           Conecte seu WhatsApp para disparar convites bonitos e automáticos para seus convidados confirmados.
         </p>
       </div>
@@ -216,11 +216,11 @@ export default function WhatsAppIntegrationScreen() {
           </div>
 
           {/* Dicas */}
-          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-6">
-            <h4 className="font-black text-sm text-emerald-700 flex items-center gap-2 mb-3">
+          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-5">
+            <h4 className="font-black text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2 mb-3">
               <Sparkles size={16} /> Como funciona o Disparo?
             </h4>
-            <ul className="space-y-3 text-xs text-emerald-800/80 font-medium">
+            <ul className="space-y-3 text-xs text-emerald-800/80 dark:text-emerald-300/70 font-medium">
               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0" /> O sistema envia a mensagem de forma espaçada para evitar bloqueios do WhatsApp.</li>
               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0" /> Apenas convidados marcados com "Convidar via Whats" na lista recebem a mensagem.</li>
               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0" /> Certifique-se de que o telefone está com o DDD correto.</li>
@@ -233,18 +233,18 @@ export default function WhatsAppIntegrationScreen() {
           <div className={`transition-opacity duration-300 ${status !== 'CONNECTED' ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
 
             {/* Abas de Tipo de Convite */}
-            <div className="flex bg-muted p-1 rounded-2xl mb-6 border border-border/50 gap-1">
-              <button onClick={() => setConfigType('template')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'template' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <ImageIcon size={14} className="inline mr-1 -mt-0.5" /> Modelos
+            <div className="flex bg-muted p-1 rounded-2xl mb-5 border border-border/50 gap-0.5 overflow-x-auto">
+              <button onClick={() => setConfigType('template')} className={`flex-1 py-2 text-[10px] sm:text-xs font-bold rounded-xl transition-colors whitespace-nowrap px-2 ${configType === 'template' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <ImageIcon size={13} className="inline mr-1 -mt-0.5" /> Modelos
               </button>
-              <button onClick={() => setConfigType('upload')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'upload' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Upload size={14} className="inline mr-1 -mt-0.5" /> Upload
+              <button onClick={() => setConfigType('upload')} className={`flex-1 py-2 text-[10px] sm:text-xs font-bold rounded-xl transition-colors whitespace-nowrap px-2 ${configType === 'upload' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Upload size={13} className="inline mr-1 -mt-0.5" /> Upload
               </button>
-              <button onClick={() => setConfigType('link')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${configType === 'link' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Link size={14} className="inline mr-1 -mt-0.5" /> Texto
+              <button onClick={() => setConfigType('link')} className={`flex-1 py-2 text-[10px] sm:text-xs font-bold rounded-xl transition-colors whitespace-nowrap px-2 ${configType === 'link' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Link size={13} className="inline mr-1 -mt-0.5" /> Texto
               </button>
-              <button onClick={() => setConfigType('rsvp')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${configType === 'rsvp' ? 'bg-emerald-500 shadow-sm text-white shadow-emerald-500/20' : 'text-muted-foreground hover:text-foreground'}`}>
-                <QrCode size={14} className="inline mr-1 -mt-0.5" /> RSVP
+              <button onClick={() => setConfigType('rsvp')} className={`flex-1 py-2 text-[10px] sm:text-xs font-bold rounded-xl transition-all whitespace-nowrap px-2 ${configType === 'rsvp' ? 'bg-emerald-500 shadow-sm text-white shadow-emerald-500/20' : 'text-muted-foreground hover:text-foreground'}`}>
+                <QrCode size={13} className="inline mr-1 -mt-0.5" /> RSVP
               </button>
             </div>
 
@@ -343,7 +343,7 @@ export default function WhatsAppIntegrationScreen() {
               </div>
 
               <textarea
-                className="w-full h-40 bg-card border border-border/50 rounded-2xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none shadow-inner"
+                className="w-full h-32 sm:h-40 bg-card border border-border/50 rounded-2xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none shadow-inner text-foreground"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Digite a mensagem que acompanhará o convite..."

@@ -18,7 +18,8 @@ import SupplierPortalScreen from './components/SupplierPortalScreen';
 import SupplierSearchScreen from './components/SupplierSearchScreen';
 import ConsumoCalculator from './components/ConsumoCalculator';
 import FinanceScreen from './components/FinanceScreen';
-import { motion } from 'framer-motion';
+import SplashScreen from './components/SplashScreen';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
@@ -34,7 +35,11 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  QrCode
+  QrCode,
+  MoreHorizontal,
+  X,
+  UtensilsCrossed,
+  Crown
 } from 'lucide-react';
 import ChatModule from './components/ChatModule';
 import AnimatedLogo from './components/AnimatedLogo';
@@ -49,6 +54,8 @@ function AppContent() {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [selectedPartyId, setSelectedPartyId] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const location = useLocation();
   const isRsvpPage = location.pathname.startsWith('/rsvp/');
@@ -56,7 +63,7 @@ function AppContent() {
   if (isRsvpPage) {
     return (
       <GuestProvider>
-        <div className="min-h-screen bg-[#0c0d12] transition-colors duration-300">
+        <div className="min-h-screen bg-background transition-colors duration-300">
           <Routes>
             <Route path="/rsvp/:id" element={<RSVPPage />} />
           </Routes>
@@ -76,11 +83,18 @@ function AppContent() {
     }
   }, [isAuthenticated, user]);
 
+  // Helper: navega e rola para o topo
+  const navigateTo = (screen) => {
+    setCurrentScreen(screen);
+    setMoreMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
   const handleLoginSuccess = () => {
     if (user?.role === 'SUPPLIER') {
-      setCurrentScreen('supplier-portal');
+      navigateTo('supplier-portal');
     } else {
-      setCurrentScreen('home');
+      navigateTo('home');
     }
   };
 
@@ -92,7 +106,7 @@ function AppContent() {
           description: 'O plano Básico/Free permite apenas 1 festa ativa. Faça upgrade para criar mais!',
           action: {
             label: 'Upgrade',
-            onClick: () => setCurrentScreen('subscription')
+            onClick: () => navigateTo('subscription')
           },
           duration: 6000,
           position: 'top-center'
@@ -104,7 +118,7 @@ function AppContent() {
           description: 'O plano Premium permite até 5 festas ativas. Faça upgrade para o plano Master para festas ilimitadas!',
           action: {
             label: 'Upgrade',
-            onClick: () => setCurrentScreen('subscription')
+            onClick: () => navigateTo('subscription')
           },
           duration: 6000,
           position: 'top-center'
@@ -113,16 +127,16 @@ function AppContent() {
       }
     }
     setSelectedPartyId(null);
-    setCurrentScreen('party-details');
+    navigateTo('party-details');
   };
 
   const handleViewParty = (partyId) => {
     setSelectedPartyId(partyId);
-    setCurrentScreen('party-details');
+    navigateTo('party-details');
   };
 
   const handleBackToHome = () => {
-    setCurrentScreen('home');
+    navigateTo('home');
     setSelectedPartyId(null);
   };
 
@@ -131,71 +145,62 @@ function AppContent() {
 
     switch (action) {
       case 'guests':
-        setCurrentScreen('guests');
+        navigateTo('guests');
         break;
       case 'consumption':
         if (isFree) {
           toast.error('Recurso Premium', {
             description: 'A Calculadora de Consumo é exclusiva dos planos Premium e Master.',
-            action: {
-              label: 'Fazer Upgrade',
-              onClick: () => setCurrentScreen('subscription')
-            },
+            action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
             duration: 6000,
             position: 'top-center'
           });
           return;
         }
-        setCurrentScreen('consumption');
+        navigateTo('consumption');
         break;
       case 'checklist':
-        setCurrentScreen('checklist');
+        navigateTo('checklist');
         break;
       case 'finance':
         if (isFree) {
           toast.error('Recurso Premium', {
             description: 'O controle financeiro avançado é exclusivo dos planos Premium e Master.',
-            action: {
-              label: 'Fazer Upgrade',
-              onClick: () => setCurrentScreen('subscription')
-            },
+            action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
             duration: 6000,
             position: 'top-center'
           });
           return;
         }
-        setCurrentScreen('finance');
+        navigateTo('finance');
         break;
       case 'suppliers':
         if (user?.role === 'SUPPLIER') {
-          setCurrentScreen('supplier-portal');
+          navigateTo('supplier-portal');
         } else {
           if (isFree) {
             toast.error('Recurso Premium', {
               description: 'A busca de fornecedores parceiros é exclusiva dos planos Premium e Master.',
-              action: {
-                label: 'Fazer Upgrade',
-                onClick: () => setCurrentScreen('subscription')
-              },
+              action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
               duration: 6000,
               position: 'top-center'
             });
             return;
           }
-          setCurrentScreen('suppliers');
+          navigateTo('suppliers');
         }
         break;
       case 'subscription':
-        setCurrentScreen('subscription');
+        navigateTo('subscription');
         break;
       case 'messages':
-        setCurrentScreen('messages');
+        navigateTo('messages');
         break;
       case 'whatsapp':
-        setCurrentScreen('whatsapp');
+        navigateTo('whatsapp');
         break;
       default:
-        setCurrentScreen('home');
+        navigateTo('home');
     }
   };
 
@@ -214,31 +219,35 @@ function AppContent() {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Abas de navegação para experiência híbrida
+  // Abas de navegação
   const tabs = user?.role === 'SUPPLIER'
     ? [
       { id: 'supplier-portal', label: 'Meu Negócio', icon: Briefcase }
     ]
     : [
       { id: 'home', label: 'Painel', icon: LayoutDashboard },
-      { id: 'messages', label: 'Mensagens', icon: MessageSquare },
       { id: 'guests', label: 'Convidados', icon: Users },
       { id: 'checklist', label: 'Tarefas', icon: CheckCircle },
       { id: 'finance', label: 'Finanças', icon: Wallet },
+      { id: 'messages', label: 'Mensagens', icon: MessageSquare },
+      { id: 'consumption', label: 'Calculadora', icon: UtensilsCrossed },
       { id: 'whatsapp', label: 'Convites', icon: MessageCircle },
       { id: 'checkin', label: 'Check-in', icon: QrCode },
-      { id: 'suppliers', label: 'Serviços', icon: Briefcase }
+      { id: 'suppliers', label: 'Serviços', icon: Briefcase },
+      { id: 'subscription', label: 'Assinatura', icon: Crown }
     ];
 
   const getActiveTab = () => {
-    if (currentScreen === 'home' || currentScreen === 'party-details' || currentScreen === 'subscription') return 'home';
+    if (currentScreen === 'home' || currentScreen === 'party-details') return 'home';
     if (currentScreen === 'messages') return 'messages';
     if (currentScreen === 'guests') return 'guests';
     if (currentScreen === 'checklist') return 'checklist';
     if (currentScreen === 'finance') return 'finance';
+    if (currentScreen === 'consumption') return 'consumption';
     if (currentScreen === 'whatsapp') return 'whatsapp';
     if (currentScreen === 'checkin') return 'checkin';
     if (currentScreen === 'suppliers' || currentScreen === 'supplier-portal') return 'suppliers';
+    if (currentScreen === 'subscription') return 'subscription';
     return 'home';
   };
 
@@ -249,92 +258,108 @@ function AppContent() {
     const isNotMaster = user?.plan !== 'MASTER' && user?.role !== 'ADMIN';
 
     if (tabId === 'home') {
-      setCurrentScreen('home');
       setSelectedPartyId(null);
+      navigateTo('home');
     } else if (tabId === 'guests') {
-      setCurrentScreen('guests');
+      navigateTo('guests');
     } else if (tabId === 'messages') {
-      setCurrentScreen('messages');
+      navigateTo('messages');
     } else if (tabId === 'checklist') {
-      setCurrentScreen('checklist');
+      navigateTo('checklist');
     } else if (tabId === 'finance') {
       if (isFree) {
         toast.error('Recurso Premium', {
           description: 'O controle financeiro avançado é exclusivo dos planos Premium e Master.',
-          action: {
-            label: 'Fazer Upgrade',
-            onClick: () => setCurrentScreen('subscription')
-          },
+          action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
           duration: 6000,
           position: 'top-center'
         });
         return;
       }
-      setCurrentScreen('finance');
+      navigateTo('finance');
     } else if (tabId === 'whatsapp') {
-      setCurrentScreen('whatsapp');
+      navigateTo('whatsapp');
+    } else if (tabId === 'consumption') {
+      if (isFree) {
+        toast.error('Recurso Premium', {
+          description: 'A Calculadora de Consumo (Churrascômetro) é exclusiva dos planos Premium e Master.',
+          action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
+          duration: 6000,
+          position: 'top-center'
+        });
+        return;
+      }
+      navigateTo('consumption');
     } else if (tabId === 'checkin') {
       if (isNotMaster) {
         toast.error('Recurso do Plano MASTER', {
           description: 'O Check-in de Portaria (Gate Desk) é um recurso exclusivo do Plano MASTER (corporativo).',
-          action: {
-            label: 'Fazer Upgrade',
-            onClick: () => setCurrentScreen('subscription')
-          },
+          action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
           duration: 6000,
           position: 'top-center'
         });
         return;
       }
-      setCurrentScreen('checkin');
+      navigateTo('checkin');
+    } else if (tabId === 'subscription') {
+      navigateTo('subscription');
     } else if (tabId === 'suppliers') {
       if (user?.role === 'SUPPLIER') {
-        setCurrentScreen('supplier-portal');
+        navigateTo('supplier-portal');
       } else {
         if (isFree) {
           toast.error('Recurso Premium', {
             description: 'A busca de fornecedores parceiros é exclusiva dos planos Premium e Master.',
-            action: {
-              label: 'Fazer Upgrade',
-              onClick: () => setCurrentScreen('subscription')
-            },
+            action: { label: 'Fazer Upgrade', onClick: () => navigateTo('subscription') },
             duration: 6000,
             position: 'top-center'
           });
           return;
         }
-        setCurrentScreen('suppliers');
+        navigateTo('suppliers');
       }
     }
   };
 
+  // Separação das abas: 5 primárias no dock + extras no menu "Mais"
+  const primaryTabIds = ['home', 'guests', 'checklist', 'finance', 'messages'];
+  const primaryTabs = tabs.filter(t => primaryTabIds.includes(t.id));
+  const extraTabs = tabs.filter(t => !primaryTabIds.includes(t.id));
+
+  const isExtraTabActive = extraTabs.some(t => t.id === activeTab);
+
   return (
     <GuestProvider>
+      {/* SPLASH SCREEN */}
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+
+      {/* Overlay para fechar menu "Mais" ao clicar fora */}
+      {moreMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={() => setMoreMenuOpen(false)}
+        />
+      )}
+
       <div className="min-h-screen bg-background transition-colors duration-300 flex flex-col lg:flex-row relative">
 
-        {/* MOBILE FLOATING THEME TOGGLE */}
+        {/* MOBILE FLOATING THEME TOGGLE — left side, não conflita com sino */}
         <button
           onClick={toggleTheme}
-          className="fixed top-4 right-4 z-50 lg:hidden w-11 h-11 rounded-2xl glass-panel border border-border/45 flex items-center justify-center shadow-premium transition-all hover:scale-105 active:scale-95 text-primary"
-          title={isDarkMode ? 'Mudar para Tema Claro (Acender Vela)' : 'Mudar para Tema Escuro (Soprar Vela)'}
+          className="fixed top-4 left-4 z-50 lg:hidden w-11 h-11 rounded-2xl glass-panel border border-border/45 flex items-center justify-center shadow-premium transition-all hover:scale-105 active:scale-95 text-primary"
+          title={isDarkMode ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
           aria-label="Alternar Tema"
         >
           {isDarkMode ? (
             <div className="relative flex items-center justify-center mt-1">
               <Cake size={20} className="text-zinc-500" strokeWidth={1.5} />
-              {/* Unlit wick */}
               <div className="absolute -top-1.5 w-[2px] h-1.5 bg-zinc-600 rounded-sm" />
             </div>
           ) : (
             <div className="relative flex items-center justify-center mt-1">
               <Cake size={20} className="text-primary" strokeWidth={1.5} />
-              {/* Animated flame */}
               <motion.div
-                animate={{
-                  scale: [1, 1.2, 0.95, 1.15, 1],
-                  opacity: [0.9, 1, 0.85, 1, 0.9],
-                  y: [0, -0.8, 0.2, -0.4, 0]
-                }}
+                animate={{ scale: [1, 1.2, 0.95, 1.15, 1], opacity: [0.9, 1, 0.85, 1, 0.9], y: [0, -0.8, 0.2, -0.4, 0] }}
                 transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
                 className="absolute -top-2 flex flex-col items-center"
               >
@@ -344,12 +369,12 @@ function AppContent() {
           )}
         </button>
 
-        {/* 1. DESKTOP SIDEBAR SHELL */}
+        {/* DESKTOP SIDEBAR */}
         {user?.role !== 'SUPPLIER' && (
           <aside className={`hidden lg:flex ${isSidebarCollapsed ? 'w-[90px]' : 'w-[280px]'} transition-all duration-300 ease-in-out bg-gradient-to-b from-[#fcebea] dark:from-orange-950/40 via-background to-background border-r border-border/40 flex-col justify-between shrink-0 h-screen sticky top-0 select-none z-20 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]`}>
-            
+
             {/* Toggle Button */}
-            <button 
+            <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="absolute -right-3 top-8 bg-card border border-border/60 rounded-full p-1 shadow-md hover:scale-110 transition-transform z-30"
             >
@@ -357,11 +382,11 @@ function AppContent() {
             </button>
 
             <div className="p-4 space-y-4 flex-1 overflow-y-auto no-scrollbar">
-              
+
               {/* Brand Header */}
-              <div className={`mb-0 flex items-center justify-center ${isSidebarCollapsed ? '' : ''}`}>
+              <div className={`mb-0 flex items-center justify-center`}>
                 {isSidebarCollapsed ? (
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary via-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-500">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary via-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500">
                     <Gift size={24} className="text-primary-foreground" />
                   </div>
                 ) : (
@@ -380,12 +405,12 @@ function AppContent() {
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-card shadow-sm" />
                 </div>
-                
+
                 {!isSidebarCollapsed && (
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-black text-xs truncate uppercase tracking-tight text-foreground">{user?.name || 'Olivia Chen'}</span>
+                    <span className="font-black text-xs truncate uppercase tracking-tight text-foreground">{user?.name || 'Usuário'}</span>
                     <button
-                      onClick={() => setCurrentScreen('subscription')}
+                      onClick={() => navigateTo('subscription')}
                       className="flex items-center gap-1 mt-0.5 text-primary hover:opacity-85 transition-opacity bg-transparent border-0 p-0 cursor-pointer text-left w-fit"
                       title="Gerenciar Assinatura"
                     >
@@ -397,7 +422,7 @@ function AppContent() {
                 )}
 
                 <div className={`flex items-center gap-1 relative z-10 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-                  <button onClick={() => setCurrentScreen('subscription')} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Assinaturas / Planos">
+                  <button onClick={() => navigateTo('subscription')} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Assinaturas / Planos">
                     <Sparkles size={14} className="text-primary animate-pulse" />
                   </button>
                   <button onClick={toggleTheme} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Tema">
@@ -414,22 +439,20 @@ function AppContent() {
                 <div className="space-y-1">
                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-1 ml-1">Festa Atual</span>
                   <div className="relative group">
-                  <Select value={currentParty?.id || ''} onValueChange={(value) => {
-                    const party = parties.find(p => p.id === value);
-                    if (party) setCurrentParty(party);
-                  }}>
-                    <SelectTrigger className="w-full bg-card hover:bg-muted/50 border border-border/50 text-foreground text-xs font-bold rounded-xl px-3 py-2 shadow-sm group-hover:shadow-md transition-all h-9">
-                      <SelectValue placeholder="Nenhuma festa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {parties.length === 0 && <SelectItem value="none" disabled>Nenhuma festa</SelectItem>}
-                      {parties.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Select value={currentParty?.id || ''} onValueChange={(value) => {
+                      const party = parties.find(p => p.id === value);
+                      if (party) setCurrentParty(party);
+                    }}>
+                      <SelectTrigger className="w-full bg-card hover:bg-muted/50 border border-border/50 text-foreground text-xs font-bold rounded-xl px-3 py-2 shadow-sm group-hover:shadow-md transition-all h-9">
+                        <SelectValue placeholder="Nenhuma festa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {parties.length === 0 && <SelectItem value="none" disabled>Nenhuma festa</SelectItem>}
+                        {parties.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-primary transition-colors">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                     </div>
@@ -442,7 +465,6 @@ function AppContent() {
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  
                   return (
                     <button
                       key={tab.id}
@@ -468,7 +490,7 @@ function AppContent() {
           </aside>
         )}
 
-        {/* 2. MAIN APP VIEWPORT (Responsive Bottom Padding for mobile navigation) */}
+        {/* MAIN APP VIEWPORT */}
         <div className="flex-grow min-w-0 pb-28 lg:pb-0">
           <Routes>
             <Route path="/rsvp/:id" element={<RSVPPage />} />
@@ -477,7 +499,7 @@ function AppContent() {
               element={(() => {
                 switch (currentScreen) {
                   case 'guests':
-                    return <GuestList onBack={handleBackToHome} onGoToSubscription={() => setCurrentScreen('subscription')} />;
+                    return <GuestList onBack={handleBackToHome} onGoToSubscription={() => navigateTo('subscription')} />;
 
                   case 'party-details':
                     return (
@@ -509,7 +531,7 @@ function AppContent() {
                     return <SupplierPortalScreen onBack={handleBackToHome} />;
 
                   case 'suppliers':
-                    return <SupplierSearchScreen onBack={handleBackToHome} onGoToMessages={() => setCurrentScreen('messages')} />;
+                    return <SupplierSearchScreen onBack={handleBackToHome} onGoToMessages={() => navigateTo('messages')} />;
 
                   case 'messages':
                     return (
@@ -539,40 +561,91 @@ function AppContent() {
           </Routes>
         </div>
 
-        {/* MOBILE FLOATING TAB DOCK: Visible only on small/medium mobile and tablet screens */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-lg z-50 lg:hidden">
-          <nav className="bg-card/75 backdrop-blur-xl border border-border/40 p-2 rounded-2xl shadow-xl shadow-black/[0.08] flex items-center justify-around gap-1">
-            {tabs.map((tab) => {
+        {/* MOBILE FLOATING TAB DOCK — 5 primárias + menu "Mais" */}
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-md z-50 lg:hidden">
+
+          {/* Drawer "Mais" — aparece acima do dock */}
+          <AnimatePresence>
+            {moreMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="absolute bottom-full mb-2 right-0 w-52 bg-card/98 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl shadow-black/[0.15] p-2 space-y-0.5"
+              >
+                {extraTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => handleTabClick(tab.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+                        }`}
+                    >
+                      <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
+                      <span className="text-xs font-bold uppercase tracking-wide">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <nav className="bg-card/80 backdrop-blur-2xl border border-border/40 px-2 py-1.5 rounded-2xl shadow-xl shadow-black/[0.1] flex items-center justify-around gap-0.5">
+            {primaryTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
-                  className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all relative cursor-pointer group"
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all relative cursor-pointer group min-w-0"
                 >
-                  {/* Bouncy active background indicator */}
                   {isActive && (
                     <motion.div
-                      layoutId="activeTabBackground"
-                      transition={{ type: 'spring', duration: 0.5 }}
+                      layoutId="activeTabBg"
+                      transition={{ type: 'spring', duration: 0.4 }}
                       className="absolute inset-0 bg-primary/10 rounded-xl z-0"
                     />
                   )}
-
-                  <div className={`relative z-10 transition-transform duration-300 group-hover:scale-105 ${isActive ? 'text-primary scale-105' : 'text-muted-foreground hover:text-foreground'
-                    }`}>
-                    <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                  <div className={`relative z-10 transition-all duration-200 ${isActive ? 'text-primary scale-110' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                    <Icon size={21} strokeWidth={isActive ? 2 : 1.5} />
                   </div>
-
-                  <span className={`relative z-10 text-[9px] font-extrabold uppercase tracking-wide leading-none ${isActive ? 'text-primary' : 'text-muted-foreground'
-                    }`}>
+                  <span className={`relative z-10 text-[9px] font-extrabold uppercase tracking-wide leading-none truncate max-w-full ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                     {tab.label}
                   </span>
                 </button>
               );
             })}
+
+            {/* Botão "Mais" */}
+            {extraTabs.length > 0 && (
+              <button
+                onClick={() => setMoreMenuOpen(prev => !prev)}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all relative cursor-pointer group min-w-0 ${moreMenuOpen || isExtraTabActive ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                {(moreMenuOpen || isExtraTabActive) && (
+                  <motion.div
+                    layoutId="activeTabBg"
+                    transition={{ type: 'spring', duration: 0.4 }}
+                    className="absolute inset-0 bg-primary/10 rounded-xl z-0"
+                  />
+                )}
+                <div className="relative z-10">
+                  {moreMenuOpen
+                    ? <X size={21} strokeWidth={2} />
+                    : <MoreHorizontal size={21} strokeWidth={1.5} />
+                  }
+                </div>
+                <span className="relative z-10 text-[9px] font-extrabold uppercase tracking-wide leading-none">
+                  Mais
+                </span>
+              </button>
+            )}
           </nav>
         </div>
 

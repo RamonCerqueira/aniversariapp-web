@@ -179,7 +179,8 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
                     required
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Data + Hora: sempre lado a lado (col-span-full quebra do grid pai) */}
+                  <div className="md:col-span-2 grid grid-cols-2 gap-4">
                     <FormInput
                       label="Data da Festa"
                       type="date"
@@ -189,7 +190,7 @@ const PartyDetailsScreen = ({ partyId, onBack }) => {
                       required
                     />
                     <FormInput
-                      label="Horário da Festa"
+                      label="Horário"
                       type="time"
                       value={formData.time}
                       onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}

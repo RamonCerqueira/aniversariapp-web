@@ -207,18 +207,34 @@ export default function TaskList({ onBack }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-8 transition-colors duration-300">
-      <div className="flex justify-between items-center border-b pb-5">
-        <h1 className="text-3xl font-extrabold text-foreground tracking-tight">🎉 Checklist da Festa</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b pb-5">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">🎉 Checklist da Festa</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={handleGeneratePDF}
             variant="outline"
-            className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-sm border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+            size="sm"
+            className="rounded-xl font-semibold flex items-center gap-1.5 shadow-sm border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 h-9 px-3"
           >
-            <FileText size={16} /> Relatório PDF
+            <FileText size={14} />
+            <span className="hidden sm:inline">Relatório PDF</span>
           </Button>
-          <Button onClick={onBack} variant="outline" className="rounded-xl px-4 py-5 font-bold flex items-center gap-1 shadow-sm border-border/80 hover:bg-muted">
-            <ArrowLeft size={16} /> Voltar
+          <Button
+            onClick={onBack}
+            variant="outline"
+            size="sm"
+            className="rounded-xl font-bold flex items-center gap-1 shadow-sm border-border/80 hover:bg-muted h-9 px-3"
+          >
+            <ArrowLeft size={14} />
+            <span className="hidden sm:inline">Voltar</span>
+          </Button>
+          <Button
+            onClick={() => handleOpenForm()}
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-9 px-3 shadow-md shadow-primary/10 flex items-center gap-1.5"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Tarefa</span>
           </Button>
         </div>
       </div>
@@ -241,8 +257,8 @@ export default function TaskList({ onBack }) {
 
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-bold text-foreground/80">Lista de Afazeres</h2>
-        <Button onClick={() => handleOpenForm()} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl py-5 shadow-md shadow-primary/10 flex items-center gap-1.5 cursor-pointer">
-          <PlusCircle className="w-4 h-4" /> Adicionar Tarefa
+        <Button onClick={() => handleOpenForm()} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl py-5 shadow-md shadow-primary/10 flex items-center gap-1.5 cursor-pointer text-sm">
+          <PlusCircle className="w-4 h-4" /> <span className="hidden sm:inline">Adicionar </span>Tarefa
         </Button>
       </div>
 

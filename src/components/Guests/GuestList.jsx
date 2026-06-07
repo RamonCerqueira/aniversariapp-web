@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGuests } from './GuestContext.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useParty } from '../../contexts/PartyContext.jsx';
@@ -11,6 +11,7 @@ import GateDesk from './GateDesk.jsx';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Users,
   Clock,
@@ -27,7 +28,9 @@ import {
   UserX,
   Phone,
   FileText,
-  Hash
+  Hash,
+  MoreVertical,
+  X
 } from 'lucide-react';
 
 export default function GuestList({ onBack, onGoToSubscription }) {
@@ -42,6 +45,7 @@ export default function GuestList({ onBack, onGoToSubscription }) {
   const [isAdding, setIsAdding] = useState(false);
   const [isBulkInviteOpen, setIsBulkInviteOpen] = useState(false);
   const [isGateDeskActive, setIsGateDeskActive] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const handleGeneratePDF = async () => {
     if (!currentParty) {
@@ -197,143 +201,161 @@ export default function GuestList({ onBack, onGoToSubscription }) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 max-w-5xl mx-auto space-y-6 transition-colors duration-300">
+    <div className="min-h-screen bg-background p-4 md:p-6 max-w-5xl mx-auto space-y-5 transition-colors duration-300">
       {/* Input oculto para importação CSV */}
-      <input
-        type="file"
-        id="csv-file-input"
-        accept=".csv"
-        className="hidden"
-        onChange={handleCsvFileChange}
-      />
+      <input type="file" id="csv-file-input" accept=".csv" className="hidden" onChange={handleCsvFileChange} />
 
-      {/* Modal de edição */}
-      {editingGuest && (
-        <GuestForm
-          existingGuest={editingGuest}
-          onClose={() => setEditingGuest(null)}
-        />
-      )}
-
-      {/* Modal de adição */}
-      {isAdding && (
-        <GuestForm
-          onClose={() => setIsAdding(false)}
-        />
-      )}
-
-      {/* Modal de envio em lote */}
+      {/* Modais */}
+      {editingGuest && <GuestForm existingGuest={editingGuest} onClose={() => setEditingGuest(null)} />}
+      {isAdding && <GuestForm onClose={() => setIsAdding(false)} />}
       {isBulkInviteOpen && (
         <BulkInviteModal
-          guests={filteredGuests.length && selectedIds.length === 0
-            ? filteredGuests
-            : guests.filter(g => selectedIds.includes(g.id))}
+          guests={filteredGuests.length && selectedIds.length === 0 ? filteredGuests : guests.filter(g => selectedIds.includes(g.id))}
           onClose={() => setIsBulkInviteOpen(false)}
         />
       )}
 
-      {/* Cabeçalho + Estatísticas + Ações */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-4 w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full md:hidden text-foreground">
+      {/* ── CABEÇALHO ── */}
+      <div className="flex items-start justify-between gap-3 pt-1">
+        {/* Título + stats */}
+        <div className="space-y-3 flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full md:hidden text-foreground shrink-0 -ml-1">
               <ArrowLeft size={20} />
             </Button>
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Convidados</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">Convidados</h1>
           </div>
-          
-          <div className="grid grid-cols-3 gap-3 md:gap-6 bg-card/50 backdrop-blur-md p-3.5 rounded-2xl border border-border/40 w-full md:w-80 shadow-md shadow-black/[0.01]">
-            <div className="text-center space-y-0.5">
-              <p className="text-xl font-extrabold text-primary">{totalGuests}</p>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Total</p>
+
+          {/* Stats bar */}
+          <div className="grid grid-cols-3 gap-2 bg-card/60 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm max-w-xs">
+            <div className="text-center">
+              <p className="text-lg sm:text-xl font-extrabold text-primary">{totalGuests}</p>
+              <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Total</p>
             </div>
-            <div className="text-center space-y-0.5">
-              <p className="text-xl font-extrabold text-emerald-500">{confirmedCount}</p>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Vão Sim</p>
+            <div className="text-center">
+              <p className="text-lg sm:text-xl font-extrabold text-emerald-500">{confirmedCount}</p>
+              <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Confirmados</p>
             </div>
-            <div className="text-center space-y-0.5">
-              <p className="text-xl font-extrabold text-rose-500">{notConfirmedCount}</p>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Pendentes</p>
+            <div className="text-center">
+              <p className="text-lg sm:text-xl font-extrabold text-rose-500">{notConfirmedCount}</p>
+              <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Pendentes</p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
-          {/* Voltar */}
-          <Button variant="outline" onClick={onBack} className="rounded-xl px-4 py-5 shadow-sm font-semibold border-border/80 hover:bg-muted md:inline-flex hidden">
-            Voltar
-          </Button>
+        {/* ── AÇÕES (mobile: botão + menu; desktop: todos visíveis) ── */}
+        <div className="flex items-center gap-2 shrink-0">
 
-          {/* Importar CSV */}
-          <Button variant="outline" onClick={handleCsvImportClick} className="rounded-xl px-4 py-5 shadow-sm font-semibold border-border/80 hover:bg-muted flex items-center gap-1.5">
-            <Upload size={16} />
-            <span>Importar CSV</span>
-          </Button>
-
-          {/* Portaria */}
-          <Button variant="outline" onClick={handleGateDeskClick} className="rounded-xl px-4 py-5 shadow-sm font-semibold border-border/80 hover:bg-muted flex items-center gap-1.5">
-            <CheckSquare size={16} />
-            <span>Portaria (Gate)</span>
-          </Button>
-
-          {/* Adicionar */}
-          <Button onClick={() => setIsAdding(true)} className="rounded-xl px-4 py-5 bg-primary text-primary-foreground font-semibold flex items-center gap-1.5 shadow-md shadow-primary/10">
-            <Plus size={18} />
-            <span>Adicionar</span>
-          </Button>
-
-          {/* Gerar PDF */}
+          {/* Adicionar — sempre visível */}
           <Button
-            variant="outline"
-            onClick={handleGeneratePDF}
-            className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-sm border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 animate-pulse-custom"
+            onClick={() => setIsAdding(true)}
+            className="rounded-xl h-10 px-3 sm:px-4 bg-primary text-primary-foreground font-semibold flex items-center gap-1.5 shadow-md shadow-primary/10 text-xs"
           >
-            <FileText size={16} />
-            <span>Gerar PDF</span>
+            <Plus size={16} />
+            <span className="hidden sm:inline">Adicionar</span>
           </Button>
 
-          {/* Convidar Todos */}
-          <Button variant="secondary" onClick={() => { setSelectedIds([]); setIsBulkInviteOpen(true); }} className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-sm">
-            <Mail size={16} />
-            <span>Convidar Todos</span>
-          </Button>
+          {/* Convidar selecionados — visível se há seleção */}
+          {selectedIds.length > 0 && (
+            <Button
+              onClick={() => setIsBulkInviteOpen(true)}
+              className="rounded-xl h-10 px-3 text-xs font-semibold flex items-center gap-1.5"
+            >
+              <Mail size={14} />
+              <span>Convidar ({selectedIds.length})</span>
+            </Button>
+          )}
 
-          {/* Convidar Selecionados */}
-          <Button
-            variant="default"
-            disabled={selectedIds.length === 0}
-            onClick={() => setIsBulkInviteOpen(true)}
-            className="rounded-xl px-4 py-5 font-semibold flex items-center gap-1.5 shadow-md disabled:opacity-50"
-          >
-            <Mail size={16} />
-            <span>Convidar ({selectedIds.length})</span>
-          </Button>
+          {/* Menu de ações extras — mobile: ícone ⋯; desktop: botões visíveis */}
+          <div className="relative">
+            {/* Mobile: botão ⋯ */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setActionsOpen(prev => !prev)}
+              className="rounded-xl h-10 w-10 border-border/70 md:hidden"
+            >
+              {actionsOpen ? <X size={16} /> : <MoreVertical size={16} />}
+            </Button>
+
+            {/* Mobile dropdown */}
+            <AnimatePresence>
+              {actionsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-12 z-50 w-52 bg-card/98 backdrop-blur-xl border border-border/50 rounded-2xl shadow-xl p-2 space-y-0.5"
+                >
+                  <button onClick={() => { setActionsOpen(false); setSelectedIds([]); setIsBulkInviteOpen(true); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted/70 transition-colors">
+                    <Mail size={16} className="text-primary" />
+                    Convidar Todos
+                  </button>
+                  <button onClick={() => { setActionsOpen(false); handleGeneratePDF(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted/70 transition-colors">
+                    <FileText size={16} className="text-emerald-500" />
+                    Gerar PDF
+                  </button>
+                  <button onClick={() => { setActionsOpen(false); handleCsvImportClick(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted/70 transition-colors">
+                    <Upload size={16} className="text-blue-500" />
+                    Importar CSV
+                  </button>
+                  <button onClick={() => { setActionsOpen(false); handleGateDeskClick(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted/70 transition-colors">
+                    <CheckSquare size={16} className="text-amber-500" />
+                    Portaria (Gate)
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Desktop: botões inline */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="secondary" onClick={() => { setSelectedIds([]); setIsBulkInviteOpen(true); }} className="rounded-xl px-4 py-2.5 font-semibold text-xs flex items-center gap-1.5">
+                <Mail size={14} /><span>Convidar Todos</span>
+              </Button>
+              <Button variant="outline" onClick={handleGeneratePDF} className="rounded-xl px-4 py-2.5 font-semibold text-xs flex items-center gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
+                <FileText size={14} /><span>PDF</span>
+              </Button>
+              <Button variant="outline" onClick={handleCsvImportClick} className="rounded-xl px-4 py-2.5 font-semibold text-xs flex items-center gap-1.5">
+                <Upload size={14} /><span>CSV</span>
+              </Button>
+              <Button variant="outline" onClick={handleGateDeskClick} className="rounded-xl px-4 py-2.5 font-semibold text-xs flex items-center gap-1.5">
+                <CheckSquare size={14} /><span>Portaria</span>
+              </Button>
+              <Button variant="outline" onClick={onBack} className="rounded-xl px-4 py-2.5 font-semibold text-xs">
+                Voltar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Overlay para fechar menu */}
+      {actionsOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setActionsOpen(false)} />
+      )}
+
       <Separator className="opacity-60" />
 
-      {/* Filtros */}
-      <Tabs value={filter} onValueChange={setFilter} className="w-full">
-        <TabsList className="flex w-full md:w-auto md:inline-flex rounded-xl p-1 bg-muted/60 border font-semibold">
-          <TabsTrigger value="all" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
-            <Users size={14} />
-            <span>Todos</span>
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
-            <Clock size={14} className="text-amber-500" />
-            <span>Pendentes</span>
-          </TabsTrigger>
-          <TabsTrigger value="confirmed" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            <span>Confirmados</span>
-          </TabsTrigger>
-          <TabsTrigger value="declined" className="flex-1 md:flex-none flex items-center gap-1.5 rounded-lg py-2 px-4 text-xs transition-all">
-            <XCircle size={14} className="text-rose-500" />
-            <span>Recusados</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* ── FILTROS — scroll horizontal no mobile ── */}
+      <div className="overflow-x-auto pb-1 -mx-1 px-1">
+        <Tabs value={filter} onValueChange={setFilter}>
+          <TabsList className="inline-flex rounded-xl p-1 bg-muted/60 border font-semibold whitespace-nowrap min-w-full sm:min-w-0">
+            <TabsTrigger value="all" className="flex items-center gap-1.5 rounded-lg py-2 px-3 text-xs transition-all">
+              <Users size={13} /><span>Todos ({totalGuests})</span>
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex items-center gap-1.5 rounded-lg py-2 px-3 text-xs transition-all">
+              <Clock size={13} className="text-amber-500" /><span>Pendentes</span>
+            </TabsTrigger>
+            <TabsTrigger value="confirmed" className="flex items-center gap-1.5 rounded-lg py-2 px-3 text-xs transition-all">
+              <CheckCircle2 size={13} className="text-emerald-500" /><span>Confirmados</span>
+            </TabsTrigger>
+            <TabsTrigger value="declined" className="flex items-center gap-1.5 rounded-lg py-2 px-3 text-xs transition-all">
+              <XCircle size={13} className="text-rose-500" /><span>Recusados</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Lista de convidados */}
       {filteredGuests.length === 0 ? (
