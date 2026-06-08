@@ -1,4 +1,5 @@
 import { prisma } from '../server.js';
+import { createNotification } from './notificationController.js';
 
 // Obter todos os convidados (opcionalmente filtrado por partyId)
 export const getGuests = async (req, res) => {
@@ -178,7 +179,10 @@ export const rsvpResponse = async (req, res) => {
     }
 
     const guest = await prisma.guest.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        party: { select: { userId: true, name: true } }
+      }
     });
 
     if (!guest) {
@@ -205,6 +209,22 @@ export const rsvpResponse = async (req, res) => {
       where: { id },
       data: updateData
     });
+
+    // Notificar o organizador da festa
+    if (guest.party?.userId) {
+      const statusText = status === 'confirmed' ? 'confirmou presença' : 'declinou o convite';
+      const companionsCount = updateData.companionNames?.length || 0;
+      const companionText = companionsCount > 0
+        ? ` (+${companionsCount} acompanhante${companionsCount > 1 ? 's' : ''})`
+        : '';
+
+      createNotification(
+        guest.party.userId,
+        'Novo RSVP Recebido! 📩',
+        `${guest.name} ${statusText}${companionText} para o evento "${guest.party.name}".`,
+        'guest'
+      ).catch(err => console.error('Erro ao gerar notificação de RSVP:', err));
+    }
 
     res.json({
       message: 'RSVP respondido com sucesso!',
@@ -262,6 +282,14 @@ export const checkInGuest = async (req, res) => {
       where: { id },
       data: { checkedIn: true, checkedInAt: new Date() }
     });
+
+    // Notificar o organizador sobre o check-in na portaria
+    createNotification(
+      req.user.id,
+      'Portaria: Check-in Realizado 🎟️',
+      `${updatedGuest.name} acabou de entrar na festa "${guest.party.name}".`,
+      'guest'
+    ).catch(err => console.error('Erro ao gerar notificação de check-in:', err));
 
     res.json({
       message: 'Check-in realizado com sucesso!',

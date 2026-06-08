@@ -161,5 +161,13 @@ export const api = {
   stripe: {
     createCheckoutSession: (plan) =>
       request('/stripe/create-checkout-session', { method: 'POST', body: { plan } }),
+  },
+
+  // Central de Notificações
+  notifications: {
+    getAll: () => request('/notifications'),
+    markAsRead: (id) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
+    markAllAsRead: () => request('/notifications/read-all', { method: 'PATCH' }),
+    clearAll: () => request('/notifications/clear-all', { method: 'DELETE' }),
   }
 };

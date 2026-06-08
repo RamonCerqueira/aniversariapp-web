@@ -18,6 +18,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import whatsappRoutes from './routes/whatsappRoutes.js';
 import stripeRoutes from './routes/stripeRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import path from 'path';
 
 dotenv.config();
@@ -48,6 +49,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Servir a pasta de uploads publicamente
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

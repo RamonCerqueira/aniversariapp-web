@@ -1,4 +1,5 @@
 import { prisma } from '../server.js';
+import { createNotification } from './notificationController.js';
 
 // Criar um novo lead (Solicitar orçamento de uma festa específica)
 export const createLead = async (req, res) => {
@@ -80,6 +81,16 @@ export const createLead = async (req, res) => {
         supplier: true
       }
     });
+
+    // Notificar o fornecedor sobre o novo lead
+    if (lead.supplier?.userId) {
+      createNotification(
+        lead.supplier.userId,
+        'Novo Orçamento Solicitado!',
+        `A festa "${lead.party?.name || 'Cliente'}" solicitou um orçamento de você.`,
+        'lead'
+      ).catch(err => console.error('Erro ao gerar notificação de lead:', err));
+    }
 
     res.status(201).json(lead);
   } catch (error) {

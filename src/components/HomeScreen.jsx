@@ -19,6 +19,7 @@ import {
   Plus
 } from 'lucide-react';
 import AnimatedLogo from './AnimatedLogo';
+import NotificationCenter from './NotificationCenter';
 
 export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }) {
   const { user } = useAuth();
@@ -44,13 +45,6 @@ export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }
       setTasks([]);
     }
   }, [currentParty?.id]);
-
-  const handleNotificationPress = () => {
-    toast.info('Você não tem novas notificações no momento. 🎈', {
-      position: 'top-center',
-      className: 'rounded-xl font-semibold'
-    });
-  };
 
   const copyRSVPLink = () => {
     if (!currentParty) return;
@@ -159,15 +153,7 @@ export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }
             <div className="flex-1 flex justify-center">
               <AnimatedLogo />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-10 h-10 rounded-xl bg-card shadow-sm border border-border/60 relative shrink-0"
-              onClick={handleNotificationPress}
-            >
-              <Bell size={18} strokeWidth={1.5} className="text-foreground" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full" />
-            </Button>
+            <NotificationCenter onNavigate={onQuickAction} />
           </div>
 
           {/* Seletor de festa no mobile */}
@@ -215,6 +201,7 @@ export default function HomeScreen({ onCreateParty, onViewParty, onQuickAction }
                 className="w-full pl-11 rounded-full border-border bg-card text-sm font-bold h-11 shadow-sm focus-visible:ring-primary/20"
               />
             </div>
+            <NotificationCenter onNavigate={onQuickAction} />
             <Button
               onClick={onCreateParty}
               className="rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-black text-xs px-5 h-11 shadow-md border-0 transition-transform hover:scale-105 whitespace-nowrap flex items-center gap-1.5"

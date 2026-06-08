@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { prisma } from '../server.js';
+import { createNotification } from '../controllers/notificationController.js';
 
 const router = express.Router();
 
@@ -174,7 +175,13 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     const { content } = req.body;
     const { role, id: userId } = req.user;
 
-    const room = await prisma.chatRoom.findUnique({ where: { id } });
+    const room = await prisma.chatRoom.findUnique({
+      where: { id },
+      include: {
+        party: { select: { userId: true, name: true } },
+        supplier: { select: { userId: true, companyName: true } }
+      }
+    });
     if (!room) return res.status(404).json({ error: 'Sala não encontrada.' });
 
     // Bloqueio do Cliente
@@ -196,6 +203,16 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       where: { id },
       data: { updatedAt: new Date() }
     });
+
+    // Notificar o destinatário da mensagem
+    const recipientId = role === 'SUPPLIER' ? room.party.userId : room.supplier.userId;
+    const senderName = role === 'SUPPLIER' ? room.supplier.companyName : room.party.name;
+    createNotification(
+      recipientId,
+      `Mensagem de ${senderName}`,
+      content.length > 65 ? `${content.substring(0, 65)}...` : content,
+      'chat'
+    ).catch(err => console.error('Erro ao gerar notificação de chat:', err));
 
     res.json(message);
   } catch (error) {

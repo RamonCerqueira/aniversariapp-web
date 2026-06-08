@@ -17,6 +17,7 @@ import SupplierPricingTab from './SupplierPricingTab';
 import SupplierReviewsTab from './SupplierReviewsTab';
 import SupplierMetricsTab from './SupplierMetricsTab';
 import { toast } from 'sonner';
+import NotificationCenter from './NotificationCenter';
 
 const TABS = [
   { id: 'identidade', label: 'Identidade', icon: Building },
@@ -358,6 +359,7 @@ export default function SupplierPortalScreen({ onBack, onLogout }) {
             <p className="text-sm text-muted-foreground font-medium">Configure as informações que os clientes verão no seu perfil.</p>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationCenter onNavigate={(screen) => setActiveTab(screen === 'supplier-portal' ? 'atendimento' : screen)} />
             {activeTab !== 'atendimento' && (
               <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-wider text-xs px-6 shadow-xl shadow-primary/20">
                 {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
