@@ -10,11 +10,11 @@ export default function SendInviteModal({ guest, onClose }) {
   const inviteLink = isMarcelleParty
     ? `${window.location.origin}/marcelle15anos?guestId=${guest.id}`
     : `${window.location.origin}/rsvp/${guest.id}`;
-  const message = encodeURIComponent(
-    isMarcelleParty
-      ? `Olá ${name}! Você foi convidado para o baile de 15 anos da Marcelle. Confirme sua presença real aqui: ${inviteLink}`
-      : `Olá ${name}! Você está convidado para a festa! Confirme sua presença aqui: ${inviteLink}`
-  );
+  const messageText = isMarcelleParty
+    ? `👑 *O CONTO DE FADAS REAL* 👑\n\nOlá, *${name}*!\nVocê foi convidado para o inesquecível Baile de 15 Anos de *Marcelle Dias*. 👸✨\n\nPara garantir sua entrada no castelo, por favor confirme sua presença real no link abaixo:\n🔗 ${inviteLink}\n\nEstamos ansiosos para celebrar este momento mágico com você! 💫`
+    : `🎉 *CONVITE ESPECIAL* 🎉\n\nOlá, *${name}*!\nVocê foi convidado para celebrar um momento muito especial conosco! 🥳✨\n\nPor favor, confirme sua presença no link abaixo:\n🔗 ${inviteLink}\n\nEsperamos você para comemorarmos juntos! 🥂`;
+
+  const message = encodeURIComponent(messageText);
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
 
   return (
