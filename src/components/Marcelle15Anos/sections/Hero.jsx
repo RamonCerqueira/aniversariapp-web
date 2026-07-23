@@ -114,9 +114,6 @@ export default function Hero() {
             transition={{ duration: 1 }}
             className="flex flex-col items-center space-y-4"
           >
-            <div className="drop-shadow-[0_0_25px_rgba(255,215,0,0.85)]">
-              <CrownIcon size={72} />
-            </div>
             <span className="text-gold/90 font-cinzel text-xs md:text-sm lg:text-base tracking-[0.5em] uppercase block">
               O Conto de Fadas Real
             </span>
@@ -130,6 +127,10 @@ export default function Hero() {
             transition={{ duration: 1.2, delay: 0.3 }}
             className="w-full overflow-hidden"
           >
+            <div className="drop-shadow-[0_0_25px_rgba(255,215,0,0.85)]">
+              <CrownIcon size={72} />
+            </div>
+
             <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[7rem] xl:text-[8rem] font-royal text-transparent bg-clip-text bg-gradient-to-b from-gold-light via-gold to-gold-dark leading-none py-4 drop-shadow-[0_4px_15px_rgba(0,0,0,0.7)] whitespace-nowrap">
               Marcelle Dias
             </h1>
@@ -166,7 +167,7 @@ export default function Hero() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock size={18} className="text-gold-light" />
-                <span>19:00H</span>
+                <span>18:00H</span>
               </div>
             </div>
 
