@@ -371,3 +371,33 @@ export const createGuestsBulk = async (req, res) => {
     res.status(500).json({ error: 'Erro ao importar convidados em lote' });
   }
 };
+
+// Busca pública de convidados por nome em uma determinada festa (integração externa)
+export const searchExternalGuests = async (req, res) => {
+  const { partyId, q } = req.query;
+
+  try {
+    if (!partyId || !q || q.trim().length < 3) {
+      return res.json([]);
+    }
+
+    const guests = await prisma.guest.findMany({
+      where: {
+        partyId,
+        name: { contains: q.trim(), mode: 'insensitive' }
+      },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        companions: true,
+      },
+      take: 10
+    });
+
+    res.json(guests);
+  } catch (error) {
+    console.error('Erro ao buscar convidados externos:', error);
+    res.status(500).json({ error: 'Erro ao buscar convidados externos' });
+  }
+};

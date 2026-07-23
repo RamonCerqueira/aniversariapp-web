@@ -87,7 +87,7 @@ function AppContent() {
   const navigateTo = (screen) => {
     setCurrentScreen(screen);
     setMoreMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   const handleLoginSuccess = () => {

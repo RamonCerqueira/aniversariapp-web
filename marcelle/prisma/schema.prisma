@@ -1,0 +1,59 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GroupType {
+  FAMILY
+  FRIEND
+}
+
+model Family {
+  id          String    @id @default(uuid())
+  name        String    // Family Name (e.g. "Família Silva")
+  code        String    @unique // Code/Name for access
+  maxGuests   Int       // Max allowed guests
+  type        GroupType @default(FAMILY)
+  isConfirmed Boolean   @default(false)
+  email       String?
+  message     String?
+  musicSuggestion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  guests      Guest[]
+}
+
+model Guest {
+  id        String   @id @default(uuid())
+  name      String
+  confirmed Boolean  @default(true) // If they are in the list, they are confirmed (usually)
+  ageGroup  String?  // Adult, Child, Teen
+  ticketCode String?   @unique
+  checkedIn  Boolean   @default(false)
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // "CONFIRMATION", "ADMIN_UPDATE", etc.
+  details   String   // JSON or text details
+  familyId  String?
+  createdAt DateTime @default(now())
+}

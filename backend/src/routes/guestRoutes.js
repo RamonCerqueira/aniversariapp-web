@@ -7,13 +7,15 @@ import {
   deleteGuest, 
   rsvpResponse,
   createGuestsBulk,
-  checkInGuest
+  checkInGuest,
+  searchExternalGuests
 } from '../controllers/guestController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Rotas Públicas (para convidados externos confirmando presença no RSVP)
+router.get('/public/search-external', searchExternalGuests);
 router.get('/public/:id', getGuestPublic);
 router.patch('/public/:id/rsvp', rsvpResponse);
 

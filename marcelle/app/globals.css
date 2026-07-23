@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-cinzel: "Cinzel", serif;
+  --font-inter: "Inter", sans-serif;
+  --font-pinyon: var(--font-pinyon);
+  --font-cormorant: var(--font-cormorant);
+  --font-great-vibes: var(--font-great-vibes);
+  
+  --color-royal: #002366; /* Deep Royal Blue */
+  --color-royal-light: #1A3C80;
+  --color-royal-dark: #001233;
+  
+  --color-ruby: #9B111E; /* Intense Ruby Red */
+  --color-ruby-light: #C21E2B;
+  --color-ruby-dark: #590011; /* Wine for shadows */
+  
+  --color-gold: #D4AF37; /* Metallic Gold */
+  --color-gold-metallic: #B8860B;
+  --color-gold-light: #FFD700;
+  --color-gold-dark: #8B6914;
+  
+  --color-pearl: #F5F5F0; /* Refined Pearl White */
+  --color-pearl-cream: #FAF9F6;
+  
+  --color-parchment: #F0E6D2; /* Parchment Texture Base */
+  
+  --shadow-wine: 0 10px 30px -5px rgba(89, 0, 17, 0.5);
+  --shadow-gold: 0 0 15px rgba(212, 175, 55, 0.5);
+  
+  --color-apple: #E30022;
+  --color-leaf: #228B22;
+  --color-mirror: #E0FFFF;
+  
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+  --animate-fog: fog 20s linear infinite;
+  --animate-reveal: reveal 1s ease-out forwards;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.6); }
+  }
+  @keyframes fog {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes reveal {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
+/*
+  We need to keep the layer directives if we want to add custom utilities
+  or base styles that use @apply, but in v4 we use @layer.
+*/
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0a0a0a;
+      --foreground: #ededed;
+    }
+  }
+
+  @media (hover: hover) {
+    body, a, button {
+      cursor: none !important;
+    }
+  }
+}
+
+@layer utilities {
+  .font-cinzel {
+    font-family: var(--font-cinzel);
+  }
+  .font-pinyon {
+    font-family: var(--font-pinyon);
+  }
+  .font-cormorant {
+    font-family: var(--font-cormorant);
+  }
+  .font-royal {
+    font-family: var(--font-great-vibes);
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #00091a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #D4AF37, #8B6914);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #FFD700;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+  }
+}
+
+/* Particle Background Animation */
+@keyframes particle-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+}
