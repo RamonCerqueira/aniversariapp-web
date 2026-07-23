@@ -60,6 +60,7 @@ function AppContent() {
 
   const location = useLocation();
   const isMarcellePage = location.pathname === '/marcelle15anos';
+  const isRsvpPage = location.pathname.startsWith('/rsvp/');
 
   if (isMarcellePage) {
     return <Marcelle15AnosPage />;
