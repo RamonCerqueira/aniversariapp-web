@@ -9,7 +9,29 @@ import { api } from "../../../services/api.js";
 import OrnamentalHeading from "../ui/OrnamentalHeading";
 import MagicButton from "../ui/MagicButton";
 
-const PIX_CODE = "00020126580014BR.GOV.BCB.PIX013661646261-3462-4262-8262-6262626262625204000053039865802BR5915MARCELLE DIAS 6009SAO PAULO62070503***6304ABCD";
+const PIX_KEY = "86107744576";
+const PIX_NAME = "MARCELLE DIAS";
+const PIX_CITY = "SAO PAULO";
+const PIX_AMOUNT = "100.00";
+
+function getCRC16(str) {
+  let crc = 0xFFFF;
+  for (let c = 0; c < str.length; c++) {
+    crc ^= str.charCodeAt(c) << 8;
+    for (let i = 0; i < 8; i++) {
+      if (crc & 0x8000) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc = crc << 1;
+      }
+    }
+  }
+  let hex = (crc & 0xFFFF).toString(16).toUpperCase();
+  return hex.padStart(4, "0");
+}
+
+const pixPart1 = "00020126330014br.gov.bcb.pix0111" + PIX_KEY + "5204000053039865406" + PIX_AMOUNT + "5802BR5913" + PIX_NAME + "6009" + PIX_CITY + "62070503***6304";
+const PIX_CODE = pixPart1 + getCRC16(pixPart1);
 const MARCELLE_PARTY_ID = "6e021c38-96c8-4743-b4c9-65bad7772fb0";
 
 export default function RSVP() {
@@ -182,33 +204,36 @@ export default function RSVP() {
         
         {/* Celebration Stars */}
         {showConfetti && (
-          <div className="absolute inset-0 pointer-events-none">
-            {Array.from({ length: 40 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ 
-                  opacity: 0, 
-                  scale: 0, 
-                  x: "50%", 
-                  y: "50%" 
-                }}
-                animate={{ 
-                  opacity: [0, 1, 0], 
-                  scale: [0, Math.random() * 1 + 0.5, 0],
-                  x: `${Math.random() * 100}%`,
-                  y: `${Math.random() * 100}%`,
-                }}
-                transition={{ 
-                  duration: Math.random() * 2 + 1, 
-                  repeat: Infinity,
-                  delay: Math.random() * 0.5 
-                }}
-                className="absolute text-gold text-2xl"
-              >
-                {["✨", "💫", "⭐", "👸", "👑"][Math.floor(Math.random() * 5)]}
-              </motion.div>
-            ))}
-          </div>
+          <>
+            <DisneyFireworks />
+            <div className="absolute inset-0 pointer-events-none">
+              {Array.from({ length: 40 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ 
+                    opacity: 0, 
+                    scale: 0, 
+                    x: "50%", 
+                    y: "50%" 
+                  }}
+                  animate={{ 
+                    opacity: [0, 1, 0], 
+                    scale: [0, Math.random() * 1 + 0.5, 0],
+                    x: `${Math.random() * 100}%`,
+                    y: `${Math.random() * 100}%`,
+                  }}
+                  transition={{ 
+                    duration: Math.random() * 2 + 1, 
+                    repeat: Infinity,
+                    delay: Math.random() * 0.5 
+                  }}
+                  className="absolute text-gold text-2xl"
+                >
+                  {["✨", "💫", "⭐", "👸", "👑"][Math.floor(Math.random() * 5)]}
+                </motion.div>
+              ))}
+            </div>
+          </>
         )}
         
         <motion.div
@@ -235,14 +260,19 @@ export default function RSVP() {
               <h3 className="text-xl font-cinzel text-ruby-dark mb-4 flex items-center justify-center gap-2">
                 <Smartphone className="w-5 h-5" /> Presente Real
               </h3>
-              <p className="text-sm text-royal-light mb-6 text-center">
-                Se desejar presentear a Marcelle com um mimo em dinheiro, você pode utilizar o PIX abaixo:
+              <p className="text-sm text-royal-light mb-4 text-center">
+                Se desejar presentear a Marcelle com um mimo em dinheiro, você pode utilizar o PIX abaixo.
               </p>
+
+              <div className="text-center mb-6 bg-gold/5 p-3 rounded-lg border border-gold/20">
+                <span className="text-[10px] font-cinzel text-gold-dark uppercase tracking-widest block mb-0.5">Sugestão de Presente</span>
+                <strong className="text-2xl font-cinzel text-ruby-dark font-extrabold">R$ 100,00</strong>
+              </div>
               
               <div className="flex flex-col md:flex-row items-center justify-center gap-8">
                 <div className="bg-white p-2 rounded-xl border border-gold/30 shadow-sm">
                   <img 
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126580014BR.GOV.BCB.PIX013661646261-3462-4262-8262-6262626262625204000053039865802BR5915MARCELLE%20DIAS%206009SAO%20PAULO62070503***6304ABCD" 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(PIX_CODE)}`} 
                     alt="QR Code PIX" 
                     className="w-40 h-40"
                   />
@@ -655,5 +685,261 @@ export default function RSVP() {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+// Animação clássica de fogos de artifício estilo abertura da Disney
+function DisneyFireworks() {
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animationFrameId;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      width = (canvas.width = window.innerWidth);
+      height = (canvas.height = window.innerHeight);
+    };
+    window.addEventListener("resize", handleResize);
+
+    const colors = [
+      "#FFD700", // Gold
+      "#FF69B4", // Hot Pink
+      "#00FFFF", // Cyan
+      "#FF4500", // OrangeRed
+      "#9400D3", // Dark Violet
+      "#00FF00", // Lime
+      "#FFFF00", // Yellow
+      "#FF1493", // Deep Pink
+    ];
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = Math.random() * 6 + 1.5;
+        this.friction = 0.95;
+        this.gravity = 0.1;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.015 + 0.008;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, Math.random() * 2 + 1, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      update() {
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= this.decay;
+      }
+    }
+
+    class DisneyArc {
+      constructor() {
+        this.t = 0;
+        this.speed = 0.008;
+        this.trail = [];
+        this.p0 = { x: width * 0.15, y: height * 0.9 };
+        this.p1 = { x: width * 0.5, y: height * 0.1 };
+        this.p2 = { x: width * 0.85, y: height * 0.9 };
+        this.color = "#FFD700";
+      }
+
+      draw() {
+        for (let i = 0; i < this.trail.length; i++) {
+          const pt = this.trail[i];
+          const opacity = i / this.trail.length;
+          ctx.save();
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = this.color;
+          ctx.fill();
+          ctx.restore();
+
+          if (Math.random() < 0.15) {
+            sparkles.push({
+              x: pt.x,
+              y: pt.y,
+              vx: (Math.random() - 0.5) * 1,
+              vy: Math.random() * 1.5 + 0.5,
+              alpha: 1,
+              decay: 0.02,
+            });
+          }
+        }
+      }
+
+      update() {
+        if (this.t <= 1) {
+          const x = (1 - this.t) * (1 - this.t) * this.p0.x + 2 * (1 - this.t) * this.t * this.p1.x + this.t * this.t * this.p2.x;
+          const y = (1 - this.t) * (1 - this.t) * this.p0.y + 2 * (1 - this.t) * this.t * this.p1.y + this.t * this.t * this.p2.y;
+          
+          this.trail.push({ x, y });
+          if (this.trail.length > 30) this.trail.shift();
+          
+          this.t += this.speed;
+
+          if (Math.abs(this.t - 0.5) < 0.01 && Math.random() < 0.5) {
+            spawnExplosion(x, y);
+          }
+        } else {
+          this.trail.shift();
+        }
+      }
+
+      isFinished() {
+        return this.t >= 1 && this.trail.length === 0;
+      }
+    }
+
+    class Rocket {
+      constructor() {
+        this.x = Math.random() * (width * 0.7) + width * 0.15;
+        this.y = height;
+        this.targetY = Math.random() * (height * 0.45) + height * 0.15;
+        this.speed = Math.random() * 5 + 4;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.trail = [];
+      }
+
+      draw() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        for (let i = this.trail.length - 1; i >= 0; i--) {
+          ctx.lineTo(this.trail[i].x, this.trail[i].y);
+        }
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      update() {
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 8) this.trail.shift();
+        this.y -= this.speed;
+        this.speed *= 0.99;
+      }
+
+      isExploded() {
+        return this.y <= this.targetY || this.speed < 1;
+      }
+    }
+
+    let sparkles = [];
+    let particles = [];
+    let rockets = [];
+    let disneyArc = new DisneyArc();
+    let frame = 0;
+
+    const spawnExplosion = (x, y, forcedColor = null) => {
+      const color = forcedColor || colors[Math.floor(Math.random() * colors.length)];
+      const numParticles = Math.floor(Math.random() * 40) + 60;
+      for (let i = 0; i < numParticles; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    };
+
+    const animate = () => {
+      ctx.fillStyle = "rgba(0, 9, 26, 0.22)";
+      ctx.fillRect(0, 0, width, height);
+
+      if (disneyArc) {
+        disneyArc.update();
+        disneyArc.draw();
+        if (disneyArc.isFinished()) {
+          disneyArc = null;
+        }
+      }
+
+      frame++;
+      if (frame % 45 === 0) {
+        rockets.push(new Rocket());
+      }
+
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        r.update();
+        r.draw();
+        if (r.isExploded()) {
+          spawnExplosion(r.x, r.y, r.color);
+          rockets.splice(i, 1);
+        }
+      }
+
+      for (let i = sparkles.length - 1; i >= 0; i--) {
+        const s = sparkles[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.alpha -= s.decay;
+
+        ctx.save();
+        ctx.globalAlpha = s.alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#FFD700";
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = "#FFD700";
+        ctx.fill();
+        ctx.restore();
+
+        if (s.alpha <= 0) sparkles.splice(i, 1);
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 w-full h-full pointer-events-none z-[9999]"
+      style={{ mixBlendMode: "screen" }}
+    />
   );
 }
