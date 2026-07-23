@@ -1,0 +1,21 @@
+{
+  "name": "Marcelle 15 Anos",
+  "short_name": "Marcelle",
+  "description": "Convite Real - Marcelle 15 Anos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001233",
+  "theme_color": "#001233",
+  "icons": [
+    {
+      "src": "/icons/logo_monograma.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/logo_monograma.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

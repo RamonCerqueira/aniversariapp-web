@@ -11,6 +11,7 @@ import PartyDetailsScreen from './components/PartyDetailsScreen';
 import GuestList from './components/Guests/GuestList';
 import TaskList from './components/Task/TaskList';
 import RSVPPage from './components/Guests/RSVPPage';
+import Marcelle15AnosPage from './components/Marcelle15Anos/Marcelle15AnosPage';
 import CheckInScreen from './components/CheckInScreen';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import { Toaster } from './components/ui/sonner';
@@ -58,7 +59,11 @@ function AppContent() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const location = useLocation();
-  const isRsvpPage = location.pathname.startsWith('/rsvp/');
+  const isMarcellePage = location.pathname === '/marcelle15anos';
+
+  if (isMarcellePage) {
+    return <Marcelle15AnosPage />;
+  }
 
   if (isRsvpPage) {
     return (
@@ -87,7 +92,11 @@ function AppContent() {
   const navigateTo = (screen) => {
     setCurrentScreen(screen);
     setMoreMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    try {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleLoginSuccess = () => {
@@ -628,7 +637,7 @@ function AppContent() {
                 onClick={() => setMoreMenuOpen(prev => !prev)}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all relative cursor-pointer group min-w-0 ${moreMenuOpen || isExtraTabActive ? 'text-primary' : 'text-muted-foreground'}`}
               >
-                {(moreMenuOpen || isExtraTabActive) && (
+                {isExtraTabActive && (
                   <motion.div
                     layoutId="activeTabBg"
                     transition={{ type: 'spring', duration: 0.4 }}

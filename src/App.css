@@ -39,6 +39,37 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-cinzel: "Cinzel", serif;
+  --font-inter: "Inter", sans-serif;
+  --font-pinyon: "Pinyon Script", cursive;
+  --font-cormorant: "Cormorant Garamond", serif;
+  --font-royal: "Great Vibes", cursive;
+
+  --color-royal: #002366;
+  --color-royal-light: #1A3C80;
+  --color-royal-dark: #001233;
+
+  --color-ruby: #9B111E;
+  --color-ruby-light: #C21E2B;
+  --color-ruby-dark: #590011;
+
+  --color-gold: #D4AF37;
+  --color-gold-metallic: #B8860B;
+  --color-gold-light: #FFD700;
+  --color-gold-dark: #8B6914;
+
+  --color-pearl: #F5F5F0;
+  --color-pearl-cream: #FAF9F6;
+
+  --color-parchment: #F0E6D2;
+
+  --shadow-wine: 0 10px 30px -5px rgba(89, 0, 17, 0.5);
+  --shadow-gold: 0 0 15px rgba(212, 175, 55, 0.5);
+
+  --color-apple: #E30022;
+  --color-leaf: #228B22;
+  --color-mirror: #E0FFFF;
 }
 
 :root {
@@ -224,5 +255,41 @@
 
 .animate-spin-slow {
   animation: spin 8s linear infinite;
+}
+
+/* Marcelle 15 Anos Custom Styles */
+@layer utilities {
+  .font-cinzel {
+    font-family: "Cinzel", serif;
+  }
+  .font-pinyon {
+    font-family: "Pinyon Script", cursive;
+  }
+  .font-cormorant {
+    font-family: "Cormorant Garamond", serif;
+  }
+  .font-royal {
+    font-family: "Great Vibes", cursive;
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+  }
+}
+
+@media (hover: hover) {
+  .marcelle-page-container,
+  .marcelle-page-container a,
+  .marcelle-page-container button {
+    cursor: none !important;
+  }
 }
 

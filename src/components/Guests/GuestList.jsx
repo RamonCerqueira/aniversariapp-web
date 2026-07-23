@@ -62,8 +62,8 @@ export default function GuestList({ onBack, onGoToSubscription }) {
     }
   };
 
-  const totalGuests = guests.length;
-  const confirmedCount = guests.filter(g => g.status === 'confirmed').length;
+  const totalGuests = guests.reduce((acc, g) => acc + 1 + (g.accompany || 0), 0);
+  const confirmedCount = guests.filter(g => g.status === 'confirmed').reduce((acc, g) => acc + 1 + (g.accompany || 0), 0);
   const notConfirmedCount = totalGuests - confirmedCount;
 
   const filteredGuests = guests.filter(g =>

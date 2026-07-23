@@ -5,10 +5,15 @@ import { X, Send, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SendInviteModal({ guest, onClose }) {
-  const { name, phone } = guest;
-  const inviteLink = `${window.location.origin}/rsvp/${guest.id}`;
+  const { name, phone, partyId } = guest;
+  const isMarcelleParty = partyId === '6e021c38-96c8-4743-b4c9-65bad7772fb0';
+  const inviteLink = isMarcelleParty
+    ? `${window.location.origin}/marcelle15anos?guestId=${guest.id}`
+    : `${window.location.origin}/rsvp/${guest.id}`;
   const message = encodeURIComponent(
-    `Olá ${name}! Você está convidado para a festa! Confirme sua presença aqui: ${inviteLink}`
+    isMarcelleParty
+      ? `Olá ${name}! Você foi convidado para o baile de 15 anos da Marcelle. Confirme sua presença real aqui: ${inviteLink}`
+      : `Olá ${name}! Você está convidado para a festa! Confirme sua presença aqui: ${inviteLink}`
   );
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
 
