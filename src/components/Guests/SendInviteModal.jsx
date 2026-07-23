@@ -52,7 +52,7 @@ export default function SendInviteModal({ guest, onClose }) {
                 href={inviteLink} 
                 target="_blank" 
                 rel="noreferrer" 
-                className="text-xs font-semibold text-primary underline truncate hover:text-primary/80 transition-colors"
+                className="text-xs font-semibold text-primary underline break-all hover:text-primary/80 transition-colors whitespace-normal"
               >
                 {inviteLink}
               </a>
