@@ -127,7 +127,7 @@ export default function Hero() {
             transition={{ duration: 1.2, delay: 0.3 }}
             className="w-full overflow-hidden"
           >
-            <div className="drop-shadow-[0_0_25px_rgba(255,215,0,0.85)]">
+            <div className="items-center justify-center drop-shadow-[0_0_25px_rgba(255,215,0,0.85)]">
               <CrownIcon size={72} />
             </div>
 

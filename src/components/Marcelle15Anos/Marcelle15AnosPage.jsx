@@ -16,19 +16,51 @@ export default function Marcelle15AnosPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
-  // Tenta tocar a música assim que o splash termina
+  // Tenta tocar a música o quanto antes (com suporte a fallback por interação do usuário)
   useEffect(() => {
-    if (!showSplash && audioRef.current) {
-      // Browsers bloqueiam som sem interação, tentamos com catch
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => {
-          console.log("Autoplay bloqueado pelo navegador, aguardando clique do usuário:", err);
-        });
-    }
-  }, [showSplash]);
+    const audio = audioRef.current;
+    if (!audio) return;
 
-  const togglePlay = () => {
+    const handlePlaySuccess = () => {
+      setIsPlaying(true);
+      removeInteractionListeners();
+    };
+
+    const attemptPlay = () => {
+      if (audio.paused) {
+        audio.play()
+          .then(handlePlaySuccess)
+          .catch((err) => {
+            console.log("Autoplay bloqueado pelo navegador, aguardando interação do usuário:", err);
+          });
+      } else {
+        handlePlaySuccess();
+      }
+    };
+
+    const removeInteractionListeners = () => {
+      window.removeEventListener("click", attemptPlay);
+      window.removeEventListener("touchstart", attemptPlay);
+      window.removeEventListener("keydown", attemptPlay);
+      window.removeEventListener("scroll", attemptPlay);
+    };
+
+    // Tenta tocar imediatamente
+    attemptPlay();
+
+    // Adiciona ouvintes para tocar assim que o usuário interagir com a página
+    window.addEventListener("click", attemptPlay);
+    window.addEventListener("touchstart", attemptPlay);
+    window.addEventListener("keydown", attemptPlay);
+    window.addEventListener("scroll", attemptPlay);
+
+    return () => {
+      removeInteractionListeners();
+    };
+  }, []);
+
+  const togglePlay = (e) => {
+    if (e) e.stopPropagation();
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -40,37 +72,39 @@ export default function Marcelle15AnosPage() {
     }
   };
 
-  if (showSplash) {
-    return <AppleLoader onComplete={() => setShowSplash(false)} />;
-  }
-
   return (
     <div className="marcelle-page-container bg-black min-h-screen text-white overflow-x-hidden relative font-sans">
-      <MagicCursor />
-      <Navbar />
-      <div id="hero"><Hero /></div>
-      <div id="about"><About /></div>
-      <div id="story"><Story /></div>
-      <div id="gallery"><Gallery /></div>
-      <div id="dresscode"><DressCode /></div>
-      <div id="event"><Event /></div>
-      <div id="rsvp"><RSVP /></div>
+      {showSplash ? (
+        <AppleLoader onComplete={() => setShowSplash(false)} />
+      ) : (
+        <>
+          <MagicCursor />
+          <Navbar />
+          <div id="hero"><Hero /></div>
+          <div id="about"><About /></div>
+          <div id="story"><Story /></div>
+          <div id="gallery"><Gallery /></div>
+          <div id="dresscode"><DressCode /></div>
+          <div id="event"><Event /></div>
+          <div id="rsvp"><RSVP /></div>
 
-      {/* Botão de Controle de Música Flutuante */}
-      <button
-        onClick={togglePlay}
-        className="fixed bottom-6 right-6 z-[99] w-12 h-12 bg-gold/90 hover:bg-gold text-black rounded-full shadow-[0_0_15px_rgba(212,175,55,0.5)] flex items-center justify-center border-2 border-double border-black transition-all hover:scale-110 active:scale-95 cursor-pointer"
-        title={isPlaying ? "Mutar Trilha Sonora" : "Tocar Trilha Sonora"}
-      >
-        {isPlaying ? (
-          <Volume2 className="w-5 h-5 animate-pulse" />
-        ) : (
-          <VolumeX className="w-5 h-5" />
-        )}
-      </button>
+          {/* Botão de Controle de Música Flutuante */}
+          <button
+            onClick={togglePlay}
+            className="fixed bottom-6 right-6 z-[99] w-12 h-12 bg-gold/90 hover:bg-gold text-black rounded-full shadow-[0_0_15px_rgba(212,175,55,0.5)] flex items-center justify-center border-2 border-double border-black transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            title={isPlaying ? "Mutar Trilha Sonora" : "Tocar Trilha Sonora"}
+          >
+            {isPlaying ? (
+              <Volume2 className="w-5 h-5 animate-pulse" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
+          </button>
+        </>
+      )}
 
-      {/* Elemento de Áudio HTML5 */}
-      <audio ref={audioRef} src="/soundtrack.mp3" loop />
+      {/* Elemento de Áudio HTML5 (Sempre montado para manter a reprodução contínua) */}
+      <audio ref={audioRef} src="/soundtrack.mp3" loop autoPlay />
     </div>
   );
 }
