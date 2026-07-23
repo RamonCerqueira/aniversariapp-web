@@ -11,8 +11,7 @@ import MagicButton from "../ui/MagicButton";
 
 const PIX_KEY = "86107744576";
 const PIX_NAME = "MARCELLE DIAS";
-const PIX_CITY = "SAO PAULO";
-const PIX_AMOUNT = "100.00";
+const PIX_CITY = "SALVADOR";
 
 function getCRC16(str) {
   let crc = 0xFFFF;
@@ -30,7 +29,7 @@ function getCRC16(str) {
   return hex.padStart(4, "0");
 }
 
-const pixPart1 = "00020126330014br.gov.bcb.pix0111" + PIX_KEY + "5204000053039865406" + PIX_AMOUNT + "5802BR5913" + PIX_NAME + "6009" + PIX_CITY + "62070503***6304";
+const pixPart1 = "00020126330014br.gov.bcb.pix0111" + PIX_KEY + "5204000053039865802BR5913" + PIX_NAME + "6009" + PIX_CITY + "62070503***6304";
 const PIX_CODE = pixPart1 + getCRC16(pixPart1);
 const MARCELLE_PARTY_ID = "6e021c38-96c8-4743-b4c9-65bad7772fb0";
 
@@ -261,13 +260,8 @@ export default function RSVP() {
                 <Smartphone className="w-5 h-5" /> Presente Real
               </h3>
               <p className="text-sm text-royal-light mb-4 text-center">
-                Se desejar presentear a Marcelle com um mimo em dinheiro, você pode utilizar o PIX abaixo.
+                Se desejar presentear a Marcelle, fique à vontade para presenteá-la com o valor que quiser utilizando o PIX abaixo.
               </p>
-
-              <div className="text-center mb-6 bg-gold/5 p-3 rounded-lg border border-gold/20">
-                <span className="text-[10px] font-cinzel text-gold-dark uppercase tracking-widest block mb-0.5">Sugestão de Presente</span>
-                <strong className="text-2xl font-cinzel text-ruby-dark font-extrabold">R$ 100,00</strong>
-              </div>
               
               <div className="flex flex-col md:flex-row items-center justify-center gap-8">
                 <div className="bg-white p-2 rounded-xl border border-gold/30 shadow-sm">
