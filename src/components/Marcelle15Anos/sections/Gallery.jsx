@@ -8,7 +8,7 @@ const photos = Array.from({ length: 15 }, (_, i) => ({
   year: i + 1,
   title: `${i + 1}º Ano`,
   desc: i === 14 ? "O grande desabrochar." : `Um ano de descobertas e alegrias.`,
-  src: `/fotos/${['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']}.jpeg`
+  src: `/fotos/${i + 1}.jpeg`
 }));
 
 export default function Gallery() {
