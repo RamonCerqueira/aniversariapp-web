@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Hero from "./sections/Hero.jsx";
 import About from "./sections/About.jsx";
 import Story from "./sections/Story.jsx";
@@ -8,8 +8,15 @@ import Event from "./sections/Event.jsx";
 import RSVP from "./sections/RSVP.jsx";
 import Navbar from "./ui/Navbar.jsx";
 import MagicCursor from "./ui/MagicCursor.jsx";
+import AppleLoader from "./ui/AppleLoader.jsx";
 
 export default function Marcelle15AnosPage() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <AppleLoader onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
     <div className="marcelle-page-container bg-black min-h-screen text-white overflow-x-hidden relative font-sans">
       <MagicCursor />
